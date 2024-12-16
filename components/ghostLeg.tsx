@@ -4,11 +4,14 @@ import { FC, useEffect, useState } from "react";
 
 export const GhostLeg: FC = () => {
   const [userNum, setUserNum] = useState<number>(2);
+  const [ctPix, setCtPix] = useState<number>(100);
 
   const increaseUser = () => {
     setUserNum((prevState) => {
       return prevState >= 12 ? prevState : prevState + 1;
     });
+
+    setCtPix((prevState) => prevState + 50);
 
     const canvas = document.querySelector(
       "._fgCanvasPane"
@@ -20,12 +23,48 @@ export const GhostLeg: FC = () => {
       // ctx 사용 가능
       const ctx = canvas.getContext("2d")!;
 
-      ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "red";
-      ctx.fillRect(10, 10, 100, 100);
-      ctx.fillStyle = "blue";
-      ctx.fillRect(40, 40, 100, 100);
-      console.log("hi");
+      // 동물 아이콘 추가
+      const animalIcon = new Image();
+      animalIcon.src = "/images/animals.png"; // 동물 아이콘 경로
+
+      animalIcon.onload = () => {
+        // 잘라낼 영역 설정 (이미지의 중앙 100x100 영역)
+        const cropX = 0;
+        const cropY = 0;
+        const cropWidth = 200; // 잘라낼 너비
+        const cropHeight = 100; // 잘라낼 높이
+        const cropAspectRatio = cropWidth / cropHeight; // 크롭된 영역 비율
+
+        // 캔버스에 그릴 크기 (비율 유지)
+        const maxCanvasWidth = 100; // 최대 너비
+        const maxCanvasHeight = 100; // 최대 높이
+
+        let destWidth = maxCanvasWidth;
+        let destHeight = maxCanvasHeight;
+
+        if (maxCanvasWidth / maxCanvasHeight > cropAspectRatio) {
+          // 높이에 맞춰 조정
+          destWidth = maxCanvasHeight * cropAspectRatio;
+        } else {
+          // 너비에 맞춰 조정
+          destHeight = maxCanvasWidth / cropAspectRatio;
+        }
+
+        console.log("destWidth : ", destWidth);
+        console.log("destHeight : ", destHeight);
+
+        ctx.drawImage(
+          animalIcon,
+          cropX,
+          cropY,
+          cropWidth,
+          cropHeight, // 소스 영역
+          0,
+          0,
+          destWidth,
+          destHeight // 캔버스 영역
+        );
+      };
     }
   };
 
@@ -129,7 +168,7 @@ export const GhostLeg: FC = () => {
                             position: "relative",
                             margin: "0px auto",
                             left: "0px",
-                            width: "300px",
+                            width: `${ctPix}px`,
                             height: "308px",
                           }}
                         >
