@@ -35,7 +35,6 @@ export const GhostLeg: FC = () => {
 
         // 고해상도를 위해 캔버스 크기 조정
         const scale = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
-        console.log("scale :", scale);
         // 캔버스의 실제 해상도를 높이기
         canvas.width = 600 * scale;
         canvas.height = 308 * scale;
@@ -47,7 +46,7 @@ export const GhostLeg: FC = () => {
         const cropHeight = 84;
 
         const canvasRatio = (canvas.width / canvas.height) * 0.5;
-        const destWidth = (85 * userNum) / canvasRatio;
+        const destWidth = (95 * userNum) / canvasRatio;
         const destHeight = 84 / canvasRatio;
 
         // 동물 아이콘 그리기
@@ -71,7 +70,7 @@ export const GhostLeg: FC = () => {
           cropWidth,
           cropHeight,
           0,
-          canvas.height - 24,
+          canvas.height - 80,
           destWidth,
           destHeight
         );
@@ -93,14 +92,14 @@ export const GhostLeg: FC = () => {
         const drawLine = async (idx: number) => {
           // 선 스타일 설정
           ctx.strokeStyle = "lightgrey"; // 선 색상
-          ctx.lineWidth = 3; // 선 두께
+          ctx.lineWidth = 12; // 선 두께
 
-          const startX = 12 + idx * 25;
+          const startX = 45 + idx * 95;
 
           // 선 그리기 시작
           ctx.beginPath(); // 경로 시작
-          ctx.moveTo(startX, 22); // 시작점 좌표 (x, y)
-          ctx.lineTo(startX, 130); // 끝점 좌표 (x, y)
+          ctx.moveTo(startX, 100); // 시작점 좌표 (x, y)
+          ctx.lineTo(startX, 530); // 끝점 좌표 (x, y)
           ctx.stroke(); // 선 그리기
           ctx.closePath(); // 경로 닫기
         };
