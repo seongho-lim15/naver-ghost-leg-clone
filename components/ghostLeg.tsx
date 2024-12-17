@@ -93,6 +93,27 @@ export const GhostLeg: FC = () => {
       if (canvas) {
         const ctx = canvas.getContext("2d")!;
 
+        // 사다리 만들기
+        const makeRandomGhostLeg = () => {
+          const ghostLegArr = [];
+          const firstAndLastEl = new Array(userNum).fill(0);
+          console.log("firstAndLastEl : ", firstAndLastEl);
+          ghostLegArr.push(firstAndLastEl);
+          ghostLegArr.push(firstAndLastEl);
+
+          // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅
+          new Array(5).fill(0).map(() => {
+            const middleEl = new Array(userNum).fill(0);
+
+            const position = Math.trunc(Math.random() * userNum);
+            console.log("position : ", position);
+
+            ghostLegArr.push(middleEl);
+          });
+
+          console.log(" ghostLegArr: ", ghostLegArr);
+        };
+
         // 사다리 그리기
         const drawLine = async (idx: number) => {
           // 선 스타일 설정
@@ -126,6 +147,7 @@ export const GhostLeg: FC = () => {
           });
         };
 
+        makeRandomGhostLeg();
         new Array(userNum).fill(1).map((_, idx) => drawLine(idx));
       }
     }
@@ -133,7 +155,6 @@ export const GhostLeg: FC = () => {
 
   const increaseUser = () => {
     setUserNum((prevState) => (prevState >= 12 ? prevState : prevState + 1));
-
     if (userNum < 12) {
       setContainerPixel((prevState) => prevState + 50);
     }
