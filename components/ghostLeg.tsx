@@ -1,77 +1,129 @@
 "use client";
 
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
+import { UserInput } from "@/components/userInput";
 
 export const GhostLeg: FC = () => {
   const [userNum, setUserNum] = useState<number>(2);
-  const [ctPix, setCtPix] = useState<number>(100);
+  const [containerPixel, setContainerPixel] = useState<number>(100);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isStart, setIsStart] = useState(false);
 
-  const increaseUser = () => {
-    setUserNum((prevState) => {
-      return prevState >= 12 ? prevState : prevState + 1;
-    });
+  useEffect(() => {
+    // 시작 초기화
+    setIsStart(false);
 
-    setCtPix((prevState) => prevState + 50);
-
-    const canvas = document.querySelector(
-      "._fgCanvasPane"
-    ) as HTMLCanvasElement | null;
-
-    console.log("canvas2 : ", canvas);
+    const canvas = canvasRef.current;
 
     if (canvas) {
-      // ctx 사용 가능
       const ctx = canvas.getContext("2d")!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 동물 아이콘 추가
-      const animalIcon = new Image();
-      animalIcon.src = "/images/animals.png"; // 동물 아이콘 경로
+      // 이미지 로드 함수
+      const loadImage = (src: string) => {
+        return new Promise<HTMLImageElement>((resolve) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = () => resolve(img);
+        });
+      };
 
-      animalIcon.onload = () => {
-        // 잘라낼 영역 설정 (이미지의 중앙 100x100 영역)
+      // 이미지 로드 후 그리기
+      const drawImages = async () => {
+        const animalIcon = await loadImage("/images/animals.png");
+        const numberIcons = await loadImage("/images/numbers.png");
+
+        // 고해상도를 위해 캔버스 크기 조정
+        const scale = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
+        console.log("scale :", scale);
+        // 캔버스의 실제 해상도를 높이기
+        canvas.width = 600 * scale;
+        canvas.height = 308 * scale;
+
+        // 공통 변수 설정
         const cropX = 0;
         const cropY = 0;
-        const cropWidth = 200; // 잘라낼 너비
-        const cropHeight = 100; // 잘라낼 높이
-        const cropAspectRatio = cropWidth / cropHeight; // 크롭된 영역 비율
+        const cropWidth = 85 * userNum;
+        const cropHeight = 84;
 
-        // 캔버스에 그릴 크기 (비율 유지)
-        const maxCanvasWidth = 100; // 최대 너비
-        const maxCanvasHeight = 100; // 최대 높이
+        const canvasRatio = (canvas.width / canvas.height) * 0.5;
+        const destWidth = (85 * userNum) / canvasRatio;
+        const destHeight = 84 / canvasRatio;
 
-        let destWidth = maxCanvasWidth;
-        let destHeight = maxCanvasHeight;
-
-        if (maxCanvasWidth / maxCanvasHeight > cropAspectRatio) {
-          // 높이에 맞춰 조정
-          destWidth = maxCanvasHeight * cropAspectRatio;
-        } else {
-          // 너비에 맞춰 조정
-          destHeight = maxCanvasWidth / cropAspectRatio;
-        }
-
-        console.log("destWidth : ", destWidth);
-        console.log("destHeight : ", destHeight);
-
+        // 동물 아이콘 그리기
         ctx.drawImage(
           animalIcon,
           cropX,
           cropY,
           cropWidth,
-          cropHeight, // 소스 영역
+          cropHeight,
           0,
           0,
           destWidth,
-          destHeight // 캔버스 영역
+          destHeight
+        );
+
+        // 숫자 아이콘 그리기
+        ctx.drawImage(
+          numberIcons,
+          cropX,
+          cropY,
+          cropWidth,
+          cropHeight,
+          0,
+          canvas.height - 24,
+          destWidth,
+          destHeight
         );
       };
+
+      drawImages();
+    }
+  }, [userNum]);
+
+  useEffect(() => {
+    // 사다리 게임 시작. 사다리 그리기
+    if (isStart) {
+      const canvas = canvasRef.current;
+
+      if (canvas) {
+        const ctx = canvas.getContext("2d")!;
+
+        // 사다리 그리기
+        const drawLine = async (idx: number) => {
+          // 선 스타일 설정
+          ctx.strokeStyle = "lightgrey"; // 선 색상
+          ctx.lineWidth = 3; // 선 두께
+
+          const startX = 12 + idx * 25;
+
+          // 선 그리기 시작
+          ctx.beginPath(); // 경로 시작
+          ctx.moveTo(startX, 22); // 시작점 좌표 (x, y)
+          ctx.lineTo(startX, 130); // 끝점 좌표 (x, y)
+          ctx.stroke(); // 선 그리기
+          ctx.closePath(); // 경로 닫기
+        };
+
+        new Array(userNum).fill(1).map((_, idx) => drawLine(idx));
+      }
+    }
+  }, [isStart]);
+
+  const increaseUser = () => {
+    setUserNum((prevState) => (prevState >= 12 ? prevState : prevState + 1));
+
+    if (userNum < 12) {
+      setContainerPixel((prevState) => prevState + 50);
     }
   };
 
   const decreaseUser = () => {
-    setUserNum((prevState) => {
-      return prevState <= 2 ? prevState : prevState - 1;
-    });
+    setUserNum((prevState) => (prevState <= 2 ? prevState : prevState - 1));
+
+    if (userNum > 2) {
+      setContainerPixel((prevState) => prevState - 50);
+    }
   };
 
   const [domLoaded, setDomLoaded] = useState(false);
@@ -130,12 +182,18 @@ export const GhostLeg: FC = () => {
                     style={{ backgroundSize: "auto", textAlign: "center" }}
                   >
                     <h4 className="hc">사다리 영역</h4>
-                    <div className="situation">
+                    <div
+                      className="situation"
+                      style={{
+                        display: isStart ? "none" : "inline",
+                      }}
+                    >
                       <p>각자 동물을 선택하고 사다리를 타보세요.</p>{" "}
                       <a
                         href="#"
                         className="game_start"
                         style={{ display: "inline" }}
+                        onClick={() => setIsStart(true)}
                       >
                         사다리 타기 시작하기
                       </a>
@@ -168,7 +226,7 @@ export const GhostLeg: FC = () => {
                             position: "relative",
                             margin: "0px auto",
                             left: "0px",
-                            width: `${ctPix}px`,
+                            width: `${containerPixel}px`,
                             height: "308px",
                           }}
                         >
@@ -185,6 +243,7 @@ export const GhostLeg: FC = () => {
                           ></canvas>
                           <canvas
                             className="_fgCanvasPane"
+                            ref={canvasRef}
                             style={{
                               position: "absolute",
                               top: 0,
@@ -206,126 +265,19 @@ export const GhostLeg: FC = () => {
                               zIndex: 120,
                             }}
                           >
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="0"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="1"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="2"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="3"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="4"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="5"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="6"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="7"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="8"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="9"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="10"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
-                            <a
-                              href="#"
-                              className="_avatar"
-                              data-idx="11"
-                              style={{
-                                display: "inline-block",
-                                width: "50px",
-                                height: "50px",
-                              }}
-                            ></a>
+                            {new Array(userNum).fill(1).map((_, idx) => (
+                              <a
+                                key={idx}
+                                href="#"
+                                className="_avatar"
+                                data-idx={idx}
+                                style={{
+                                  display: "inline-block",
+                                  width: "50px",
+                                  height: "50px",
+                                }}
+                              />
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -361,133 +313,54 @@ export const GhostLeg: FC = () => {
                   </div>
                   <div className="cntrl_frm">
                     <h4>내기설정</h4>
-                    <div className="btn_area">
-                      <button type="button" className="rfsh">
-                        초기화
-                      </button>
-                      <button type="button" className="rndm">
-                        추천내기
-                        <span>
-                          <span className="hc">열기</span>
-                        </span>
-                      </button>
-                    </div>
-                    <div className="recom_area" style={{ display: "none" }}>
-                      <div className="rcm_lst">
-                        <div className="line">
-                          <h5 className="hc">추천내기 리스트</h5>
-                          <ul className="rcm">
-                            <li>
-                              <a href="#">간식내기</a>
-                            </li>
-                            <li>
-                              <a href="#">벌칙자뽑기</a>
-                            </li>
-                            <li>
-                              <a href="#">당첨자뽑기</a>
-                            </li>
-                            <li>
-                              <a href="#">순서정하기</a>
-                            </li>
-                            <li>
-                              <a href="#">편나누기</a>
-                            </li>
-                            <li>
-                              <a href="#">조모임역할</a>
-                            </li>
-                          </ul>
-                          <h5>추천내기</h5>
-                          <ul className="rcn_noti">
-                            <li>상황별로 내기를 추천해드리는 기능입니다</li>
-                            <li>
-                              자동으로 입력된 내용이 불필요하다면 초기화 로
-                              삭제하시거나 조금씩 수정하여 사용해 보세요.
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ad_lst">
-                      <ol>
-                        <li>
-                          <div>
-                            <span className="num">1</span>
-                            <input
-                              type="text"
-                              maxLength={8}
-                              value=""
-                              title="1번 내기 작성하기"
-                              placeholder="입력해주세요"
-                              className="_betting"
-                            />
-                          </div>
-                        </li>
-                        <li>
-                          <div>
-                            <span className="num">2</span>
-                            <input
-                              type="text"
-                              maxLength={8}
-                              value=""
-                              title="2번 내기 작성하기"
-                              placeholder="입력해주세요"
-                              className="_betting"
-                            />
-                          </div>
-                        </li>
-                        <li>
-                          <div>
-                            <span className="num">3</span>
-                            <input
-                              type="text"
-                              maxLength={8}
-                              value=""
-                              title="3번 내기 작성하기"
-                              placeholder="입력해주세요"
-                              className="_betting"
-                            />
-                          </div>
-                        </li>
-                        <li>
-                          <div>
-                            <span className="num">4</span>
-                            <input
-                              type=" text"
-                              maxLength={8}
-                              value=""
-                              title="4번 내기 작성하기"
-                              placeholder="입력해주세요"
-                              className="_betting"
-                            />
-                          </div>
-                        </li>
-                        <li>
-                          <div>
-                            <span className="num">5</span>
-                            <input
-                              type="text"
-                              maxLength={8}
-                              value=""
-                              title="5번 내기 작성하기"
-                              placeholder="입력해주세요"
-                            />
-                          </div>
-                        </li>
-                        <li>
-                          <div>
-                            <span className="num">6</span>
-                            <input
-                              type=" text"
-                              maxLength={8}
-                              value=""
-                              title="6번 내기 작성하기"
-                              placeholder="입력해주세요"
-                              className="_betting"
-                            />
-                          </div>
-                        </li>
-                      </ol>
-                    </div>
+                    <UserInput userNum={userNum} />
+
+                    {/*<div className="btn_area">*/}
+                    {/*  <button type="button" className="rfsh">*/}
+                    {/*    초기화*/}
+                    {/*  </button>*/}
+                    {/*  <button type="button" className="rndm">*/}
+                    {/*    추천내기*/}
+                    {/*    <span>*/}
+                    {/*      <span className="hc">열기</span>*/}
+                    {/*    </span>*/}
+                    {/*  </button>*/}
+                    {/*</div>*/}
+                    {/*<div className="recom_area" style={{ display: "none" }}>*/}
+                    {/*  <div className="rcm_lst">*/}
+                    {/*    <div className="line">*/}
+                    {/*      <h5 className="hc">추천내기 리스트</h5>*/}
+                    {/*      <ul className="rcm">*/}
+                    {/*        <li>*/}
+                    {/*          <a href="#">간식내기</a>*/}
+                    {/*        </li>*/}
+                    {/*        <li>*/}
+                    {/*          <a href="#">벌칙자뽑기</a>*/}
+                    {/*        </li>*/}
+                    {/*        <li>*/}
+                    {/*          <a href="#">당첨자뽑기</a>*/}
+                    {/*        </li>*/}
+                    {/*        <li>*/}
+                    {/*          <a href="#">순서정하기</a>*/}
+                    {/*        </li>*/}
+                    {/*        <li>*/}
+                    {/*          <a href="#">편나누기</a>*/}
+                    {/*        </li>*/}
+                    {/*        <li>*/}
+                    {/*          <a href="#">조모임역할</a>*/}
+                    {/*        </li>*/}
+                    {/*      </ul>*/}
+                    {/*      <h5>추천내기</h5>*/}
+                    {/*      <ul className="rcn_noti">*/}
+                    {/*        <li>상황별로 내기를 추천해드리는 기능입니다</li>*/}
+                    {/*        <li>*/}
+                    {/*          자동으로 입력된 내용이 불필요하다면 초기화 로*/}
+                    {/*          삭제하시거나 조금씩 수정하여 사용해 보세요.*/}
+                    {/*        </li>*/}
+                    {/*      </ul>*/}
+                    {/*    </div>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
                   </div>
                 </div>
                 <div className="spe_slc">
