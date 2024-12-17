@@ -3,6 +3,7 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { UserInput } from "@/components/userInput";
 import { mockGhostLeg } from "@/src/data/ghost_leg";
+import { AnimalButtons } from "@/components/AnimalButton";
 
 export const GhostLeg: FC = () => {
   const [userNum, setUserNum] = useState<number>(2);
@@ -107,7 +108,7 @@ export const GhostLeg: FC = () => {
           ctx.stroke(); // 선 그리기
           ctx.closePath(); // 경로 닫기
 
-          // mock 사다리 그리기=
+          // mock 사다리 그리기
           mockGhostLeg.map((position, ghostLegIdx) => {
             // 선 스타일 설정
             ctx.strokeStyle = "lightgrey"; // 선 색상
@@ -285,19 +286,7 @@ export const GhostLeg: FC = () => {
                               zIndex: 120,
                             }}
                           >
-                            {new Array(userNum).fill(1).map((_, idx) => (
-                              <a
-                                key={idx}
-                                href="#"
-                                className="_avatar"
-                                data-idx={idx}
-                                style={{
-                                  display: "inline-block",
-                                  width: "50px",
-                                  height: "50px",
-                                }}
-                              />
-                            ))}
+                            <AnimalButtons userNum={userNum} />
                           </div>
                         </div>
                       </div>
