@@ -2,6 +2,7 @@
 
 import { FC, useEffect, useRef, useState } from "react";
 import { UserInput } from "@/components/userInput";
+import { mockGhostLeg } from "@/src/data/ghost_leg";
 
 export const GhostLeg: FC = () => {
   const [userNum, setUserNum] = useState<number>(2);
@@ -34,10 +35,10 @@ export const GhostLeg: FC = () => {
         const numberIcons = await loadImage("/images/numbers.png");
 
         // 고해상도를 위해 캔버스 크기 조정
-        const scale = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
+        const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
         // 캔버스의 실제 해상도를 높이기
-        canvas.width = 600 * scale;
-        canvas.height = 308 * scale;
+        canvas.width = 600 * dpr;
+        canvas.height = 308 * dpr;
 
         // 공통 변수 설정
         const cropX = 0;
@@ -45,9 +46,12 @@ export const GhostLeg: FC = () => {
         const cropWidth = 85 * userNum;
         const cropHeight = 84;
 
-        const canvasRatio = (canvas.width / canvas.height) * 0.5;
-        const destWidth = (95 * userNum) / canvasRatio;
-        const destHeight = 84 / canvasRatio;
+        // const canvasRatio = (canvas.width / canvas.height) * 0.5;
+        // const destWidth = (90 * userNum) / canvasRatio;
+        // const destHeight = 84 / canvasRatio;
+
+        const destWidth = 95 * userNum;
+        const destHeight = 84;
 
         // 동물 아이콘 그리기
         ctx.drawImage(
@@ -102,6 +106,23 @@ export const GhostLeg: FC = () => {
           ctx.lineTo(startX, 530); // 끝점 좌표 (x, y)
           ctx.stroke(); // 선 그리기
           ctx.closePath(); // 경로 닫기
+
+          // mock 사다리 그리기=
+          mockGhostLeg.map((position, ghostLegIdx) => {
+            // 선 스타일 설정
+            ctx.strokeStyle = "lightgrey"; // 선 색상
+            ctx.lineWidth = 12; // 선 두께
+
+            // 이어져 있는 선이 있을 경우
+            if (position[idx] == 1 && position[idx + 1] == 1) {
+              // 선 그리기 시작
+              ctx.beginPath(); // 경로 시작
+              ctx.moveTo(startX, 100 + ghostLegIdx * 70); // 시작점 좌표 (x, y)
+              ctx.lineTo(startX + 95, 100 + ghostLegIdx * 70); // 끝점 좌표 (x, y)
+              ctx.stroke(); // 선 그리기
+              ctx.closePath(); // 경로 닫기
+            }
+          });
         };
 
         new Array(userNum).fill(1).map((_, idx) => drawLine(idx));
