@@ -77,7 +77,7 @@ export const GhostLeg: FC = () => {
           );
 
           // 고해상도를 위해 캔버스 크기 조정
-          const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
+          // const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
 
           // 캔버스의 실제 해상도를 높이기
           canvas.width = 600;
@@ -169,7 +169,7 @@ export const GhostLeg: FC = () => {
     ghostLegArr.push(firstAndLastEl);
 
     // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 7개 행
-    new Array(7).fill(0).map((_, idx) => {
+    new Array(7).fill(0).map(() => {
       const ceil = Math.ceil((userNum - 1) / 2);
       let count = 0; // 1의 개수
       const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
@@ -290,8 +290,6 @@ export const GhostLeg: FC = () => {
   const calculateGhostLegResult = (animalIdx: number) => {
     console.log("animalIdx : ", animalIdx);
     console.log("ghostLeg : ", ghostLeg);
-
-    console.log("result :", result);
   };
 
   /**
