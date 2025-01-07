@@ -5,12 +5,28 @@ import { UserInput } from "@/components/userInput";
 import { AnimalButtons } from "@/components/AnimalButton";
 
 export const GhostLeg: FC = () => {
+  const [domLoaded, setDomLoaded] = useState(false);
   const [userNum, setUserNum] = useState<number>(2);
   const [containerPixel, setContainerPixel] = useState<number>(100);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isStart, setIsStart] = useState(false);
+  const [nagi, setNagi] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
+    setDomLoaded(true);
+  }, []);
+
+  /**
+   * 인원 수 변경
+   */
+  useEffect(() => {
+    for (let i = 0; i < userNum; i++) {
+      if (!nagi[i]) {
+        nagi[i] = "";
+      }
+    }
+
+    console.log("nagi : ", nagi);
     setIsStart(false); // 시작 초기화
     drawAnimalImg(); // 동물 이미지 그리기
   }, [userNum]);
@@ -27,104 +43,112 @@ export const GhostLeg: FC = () => {
   /**
    * 동물, 번호 이미지 그리기
    */
-  const drawAnimalImg = (cb = null) => {
+  const drawAnimalImg = (cb: (() => void) | null = null) => {
     const canvas = canvasRef.current;
 
     if (canvas) {
       const ctx = canvas.getContext("2d")!;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      /**
-       * 이미지 로드 함수
-       * @param src
-       */
-      const loadImage = (src: string) => {
-        return new Promise<HTMLImageElement>((resolve) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = () => resolve(img);
-        });
-      };
+      // 오프스크린 캔버스 생성
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = canvas.width;
+      offCanvas.height = canvas.height;
+      const offCtx = offCanvas.getContext("2d");
 
-      // 이미지 로드 후 그리기
-      const drawImages = async () => {
-        const animalIcon = await loadImage("/images/animals.png");
-        const numberIcons = await loadImage("/images/numbers.png");
+      if (offCtx) {
+        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
 
-        const animalAndNumberIcons = await loadImage(
-          "/images/sprite_junis_small_v4.png"
-        );
+        /**
+         * 이미지 로드 함수
+         * @param src
+         */
+        const loadImage = (src: string) => {
+          return new Promise<HTMLImageElement>((resolve) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => resolve(img);
+          });
+        };
 
-        // 고해상도를 위해 캔버스 크기 조정
-        const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
-        // 캔버스의 실제 해상도를 높이기
-        canvas.width = 600;
-        canvas.height = 308;
+        // 이미지 로드 후 그리기
+        const drawImages = async () => {
+          const animalAndNumberIcons = await loadImage(
+            "/images/sprite_junis_small_v4.png"
+          );
 
-        const cropX = 0; // 이미지 크롭 시작 x 좌표
-        const cropY = 0; // 이미지 크롭 시작 y 좌표
-        const cropWidth = 50 * userNum; // 이미지 크롭 너비
-        const cropHeight = 50; // 이미지 크롭 높이
-        const canvasX = 0; // 이미지를 그릴 canvas 의 x 좌표
-        const canvasY = 0; // 이미지를 그릴 canvas 의 y 좌표
-        const destWidth = 50 * userNum;
-        const destHeight = 50;
+          // 고해상도를 위해 캔버스 크기 조정
+          const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
 
-        // 동물 아이콘 그림자 그리기
-        ctx.drawImage(
-          animalAndNumberIcons,
-          cropX,
-          cropY,
-          cropWidth,
-          cropHeight,
-          canvasX,
-          canvasY,
-          destWidth,
-          destHeight
-        );
+          // 캔버스의 실제 해상도를 높이기
+          canvas.width = 600;
+          canvas.height = 308;
 
-        // 동물 아이콘 그리기
-        ctx.drawImage(
-          animalAndNumberIcons,
-          cropX,
-          cropY + 50,
-          cropWidth,
-          cropHeight,
-          canvasX,
-          canvasY,
-          destWidth,
-          destHeight
-        );
+          const cropX = 0; // 이미지 크롭 시작 x 좌표
+          const cropY = 0; // 이미지 크롭 시작 y 좌표
+          const cropWidth = 50 * userNum; // 이미지 크롭 너비
+          const cropHeight = 50; // 이미지 크롭 높이
+          const canvasX = 0; // 이미지를 그릴 canvas 의 x 좌표
+          const canvasY = 0; // 이미지를 그릴 canvas 의 y 좌표
+          const destWidth = 50 * userNum;
+          const destHeight = 50;
 
-        // 숫자 아이콘 그리기
-        ctx.drawImage(
-          animalAndNumberIcons,
-          cropX,
-          cropY + 100,
-          cropWidth,
-          cropHeight,
-          0,
-          canvas.height - 50,
-          destWidth,
-          destHeight
-        );
+          // 동물 아이콘 그림자 그리기
+          offCtx.drawImage(
+            animalAndNumberIcons,
+            cropX,
+            cropY,
+            cropWidth,
+            cropHeight,
+            canvasX,
+            canvasY,
+            destWidth,
+            destHeight
+          );
 
-        cb(); // 콜백 함수 존재 시 호출
-      };
+          // 동물 아이콘 그리기
+          offCtx.drawImage(
+            animalAndNumberIcons,
+            cropX,
+            cropY + 50,
+            cropWidth,
+            cropHeight,
+            canvasX,
+            canvasY,
+            destWidth,
+            destHeight
+          );
 
-      drawImages();
+          // 숫자 아이콘 그리기
+          offCtx.drawImage(
+            animalAndNumberIcons,
+            cropX,
+            cropY + 100,
+            cropWidth,
+            cropHeight,
+            0,
+            canvas.height - 50,
+            destWidth,
+            destHeight
+          );
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(offCanvas, 0, 0);
+
+          cb && cb(); // 콜백 함수 존재 시 호출
+        };
+
+        drawImages();
+      }
     }
   };
 
   /**
-   * 사다리 그리기
+   * 사다리 선 그리기
    */
   const drawGhostLeg = () => {
     const canvas = canvasRef.current;
 
     if (canvas) {
-      const ctx = canvas.getContext("2d")!;
-
       /**
        * 랜덤으로 사다리 배열 만들기
        */
@@ -135,8 +159,8 @@ export const GhostLeg: FC = () => {
         ghostLegArr.push(firstAndLastEl);
         ghostLegArr.push(firstAndLastEl);
 
-        // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 5개 행
-        new Array(5).fill(0).map(() => {
+        // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 7개 행
+        new Array(7).fill(0).map((_, idx) => {
           const ceil = Math.ceil((userNum - 1) / 2);
           let count = 0; // 1의 개수
           const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
@@ -164,7 +188,6 @@ export const GhostLeg: FC = () => {
               count++;
               // 1의 개수를 제한
               if (count >= limitCnt) {
-                // 필요한 1의 개수
                 break;
               }
             }
@@ -176,36 +199,6 @@ export const GhostLeg: FC = () => {
         return ghostLegArr;
       };
 
-      /**
-       * 사다리 배열에 맞춰 사다리 그리기
-       * @param userIdx
-       */
-      const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
-        // 선 스타일 설정
-        ctx.strokeStyle = "lightgrey"; // 선 색상
-        ctx.lineWidth = 12; // 선 두께
-
-        /* 수직선 그리기 */
-        const startX = 45 + userIdx * 95;
-        ctx.beginPath(); // 경로 시작
-        ctx.moveTo(startX, 100); // 시작점 좌표 (x, y)
-        ctx.lineTo(startX, 530); // 끝점 좌표 (x, y)
-        ctx.stroke(); // 선 그리기
-        ctx.closePath(); // 경로 닫기
-
-        /* 사다리 수평선 그리기 */
-        ghostLegArray.map((position, ghostLegIdx) => {
-          // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
-          if (position[userIdx] == 1) {
-            ctx.beginPath(); // 경로 시작
-            ctx.moveTo(startX, 100 + ghostLegIdx * 70); // 시작점 좌표 (x, y)
-            ctx.lineTo(startX + 95, 100 + ghostLegIdx * 70); // 끝점 좌표 (x, y)
-            ctx.stroke(); // 선 그리기
-            ctx.closePath(); // 경로 닫기
-          }
-        });
-      };
-
       const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
       new Array(userNum)
         .fill(1)
@@ -213,6 +206,85 @@ export const GhostLeg: FC = () => {
     }
   };
 
+  /**
+   * 사다리 배열에 맞춰 사다리 선 그리기
+   * @param userIdx
+   */
+  const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
+    const canvas = canvasRef.current;
+
+    if (canvas) {
+      const ctx = canvas.getContext("2d")!;
+
+      // 선 스타일 설정
+      ctx.strokeStyle = "lightgrey"; // 선 색상
+      ctx.lineWidth = 5; // 선 두께
+
+      /* 수직선 그리기 */
+      const startX = 25 + userIdx * 50;
+      ctx.beginPath(); // 경로 시작
+      ctx.moveTo(startX, 50); // 시작점 좌표 (x, y)
+      ctx.lineTo(startX, 260); // 끝점 좌표 (x, y)
+      ctx.stroke(); // 선 그리기
+      ctx.closePath(); // 경로 닫기
+
+      /* 사다리 수평선 그리기 */
+      const lineGap = 28;
+      const startY = 40;
+
+      ghostLegArray.map((position, ghostLegIdx) => {
+        // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
+        if (position[userIdx] == 1) {
+          ctx.beginPath(); // 경로 시작
+          ctx.moveTo(startX, startY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
+          ctx.lineTo(startX + 50, startY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
+          ctx.stroke(); // 선 그리기
+          ctx.closePath(); // 경로 닫기
+        }
+      });
+    }
+  };
+
+  /**
+   * 동물을 클릭해서 사다리 타기 시작
+   */
+  const moveAnimal = (animalIdx: number) => {
+    if (isStart) {
+      const canvas = canvasRef.current;
+
+      if (canvas) {
+        const ctx = canvas.getContext("2d")!;
+
+        // 선 스타일 설정
+        ctx.strokeStyle = "yellow"; // 선 색상
+        ctx.lineWidth = 5; // 선 두께
+
+        const startX = 25 + animalIdx * 50; // 시작 X 좌표
+        const startY = 50; // 시작 Y 좌표
+        const endY = 260; // 끝 Y 좌표
+        let currentY = startY; // 현재 Y 좌표 (애니메이션 진행 상태)
+
+        const drawLine = () => {
+          ctx.beginPath(); // 경로 시작
+          ctx.moveTo(startX, startY); // 시작점 좌표 (x, y)
+          ctx.lineTo(startX, currentY); // 끝점 좌표 (x, y)
+          ctx.stroke(); // 선 그리기
+          ctx.closePath(); // 경로 닫기
+
+          if (currentY < endY) {
+            currentY += 3; // 선을 아래로 확장 (속도 조정 가능)
+            requestAnimationFrame(drawLine); // 다음 프레임 요청
+          }
+        };
+
+        drawLine();
+      }
+    }
+  };
+
+  /**
+   * 유저수 증가
+   */
   const increaseUser = () => {
     setUserNum((prevState) => (prevState >= 12 ? prevState : prevState + 1));
     if (userNum < 12) {
@@ -220,6 +292,9 @@ export const GhostLeg: FC = () => {
     }
   };
 
+  /**
+   * 유저수 감소
+   */
   const decreaseUser = () => {
     setUserNum((prevState) => (prevState <= 2 ? prevState : prevState - 1));
 
@@ -227,12 +302,6 @@ export const GhostLeg: FC = () => {
       setContainerPixel((prevState) => prevState - 50);
     }
   };
-
-  const [domLoaded, setDomLoaded] = useState(false);
-
-  useEffect(() => {
-    setDomLoaded(true);
-  }, []);
 
   return (
     <div>
@@ -371,7 +440,10 @@ export const GhostLeg: FC = () => {
                               zIndex: 120,
                             }}
                           >
-                            <AnimalButtons userNum={userNum} />
+                            <AnimalButtons
+                              userNum={userNum}
+                              moveAnimal={moveAnimal}
+                            />
                           </div>
                         </div>
                       </div>
@@ -416,7 +488,11 @@ export const GhostLeg: FC = () => {
                   </div>
                   <div className="cntrl_frm">
                     <h4>내기설정</h4>
-                    <UserInput userNum={userNum} />
+                    <UserInput
+                      userNum={userNum}
+                      nagi={nagi}
+                      setNagi={setNagi}
+                    />
 
                     {/*<div className="btn_area">*/}
                     {/*  <button type="button" className="rfsh">*/}

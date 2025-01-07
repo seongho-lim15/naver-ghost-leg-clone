@@ -1,4 +1,10 @@
-export const AnimalButtons = ({ userNum }: { userNum: number }) => {
+export const AnimalButtons = ({
+  userNum,
+  moveAnimal,
+}: {
+  userNum: number;
+  moveAnimal: (idx: number) => void;
+}) => {
   return (
     <>
       {new Array(userNum).fill(1).map((_, idx) => (
@@ -12,6 +18,7 @@ export const AnimalButtons = ({ userNum }: { userNum: number }) => {
             width: "50px",
             height: "50px",
           }}
+          onClick={() => moveAnimal(idx)}
         />
       ))}
     </>
