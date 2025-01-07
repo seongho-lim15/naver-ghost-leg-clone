@@ -11,7 +11,7 @@ export const GhostLeg: FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isStart, setIsStart] = useState(false);
   const [nagi, setNagi] = useState<{ [key: number]: string }>({});
-
+  const [ghostLeg, setGhostLeg] = useState<number[][]>([]);
   useEffect(() => {
     setDomLoaded(true);
   }, []);
@@ -149,61 +149,63 @@ export const GhostLeg: FC = () => {
     const canvas = canvasRef.current;
 
     if (canvas) {
-      /**
-       * 랜덤으로 사다리 배열 만들기
-       */
-      const makeRandomGhostLeg = () => {
-        const ghostLegArr: number[][] = [];
-        const firstAndLastEl = new Array(userNum - 1).fill(0);
-
-        ghostLegArr.push(firstAndLastEl);
-        ghostLegArr.push(firstAndLastEl);
-
-        // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 7개 행
-        new Array(7).fill(0).map((_, idx) => {
-          const ceil = Math.ceil((userNum - 1) / 2);
-          let count = 0; // 1의 개수
-          const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
-
-          const arr = Array(userNum - 1).fill(0); // (유저수 - 1) 의 길이를 가진 배열 생성 예) [0, 0, 0, 0, 0]
-          const positions = Array(userNum - 1) // 인덱스 리스트
-            .fill(0)
-            .map((_, idx) => {
-              return idx;
-            });
-
-          // 인덱스를 무작위로 섞음
-          for (let i = positions.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [positions[i], positions[j]] = [positions[j], positions[i]];
-          }
-
-          for (const pos of positions) {
-            // 현재 위치와 양쪽 인접 위치를 확인
-            if (
-              (pos === 0 || arr[pos - 1] === 0) &&
-              (pos === userNum - 2 || arr[pos + 1] === 0)
-            ) {
-              arr[pos] = 1;
-              count++;
-              // 1의 개수를 제한
-              if (count >= limitCnt) {
-                break;
-              }
-            }
-          }
-
-          ghostLegArr.splice(1, 0, arr);
-        });
-
-        return ghostLegArr;
-      };
-
       const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+      setGhostLeg(ghostLegArray); // 사다리 상태 저장
+      // 사다리 그리기
       new Array(userNum)
         .fill(1)
-        .map((_, userIdx) => drawLine(userIdx, ghostLegArray)); // 사다리 그리기
+        .map((_, userIdx) => drawLine(userIdx, ghostLegArray));
     }
+  };
+
+  /**
+   * 랜덤으로 사다리 배열 만들기
+   */
+  const makeRandomGhostLeg = () => {
+    const ghostLegArr: number[][] = [];
+    const firstAndLastEl = new Array(userNum - 1).fill(0);
+
+    ghostLegArr.push(firstAndLastEl);
+    ghostLegArr.push(firstAndLastEl);
+
+    // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 7개 행
+    new Array(7).fill(0).map((_, idx) => {
+      const ceil = Math.ceil((userNum - 1) / 2);
+      let count = 0; // 1의 개수
+      const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
+
+      const arr = Array(userNum - 1).fill(0); // (유저수 - 1) 의 길이를 가진 배열 생성 예) [0, 0, 0, 0, 0]
+      const positions = Array(userNum - 1) // 인덱스 리스트
+        .fill(0)
+        .map((_, idx) => {
+          return idx;
+        });
+
+      // 인덱스를 무작위로 섞음
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [positions[i], positions[j]] = [positions[j], positions[i]];
+      }
+
+      for (const pos of positions) {
+        // 현재 위치와 양쪽 인접 위치를 확인
+        if (
+          (pos === 0 || arr[pos - 1] === 0) &&
+          (pos === userNum - 2 || arr[pos + 1] === 0)
+        ) {
+          arr[pos] = 1;
+          count++;
+          // 1의 개수를 제한
+          if (count >= limitCnt) {
+            break;
+          }
+        }
+      }
+
+      ghostLegArr.splice(1, 0, arr);
+    });
+
+    return ghostLegArr;
   };
 
   /**
@@ -215,13 +217,15 @@ export const GhostLeg: FC = () => {
 
     if (canvas) {
       const ctx = canvas.getContext("2d")!;
-
       // 선 스타일 설정
       ctx.strokeStyle = "lightgrey"; // 선 색상
       ctx.lineWidth = 5; // 선 두께
 
+      const startX = 25 + userIdx * 50; // 사다리 시작 x 좌표
+      const defaultStartY = 40; // 기본 사다리 시작 y 좌표
+      const lineGap = 28; // 수평 사다리 사이 높이
+
       /* 수직선 그리기 */
-      const startX = 25 + userIdx * 50;
       ctx.beginPath(); // 경로 시작
       ctx.moveTo(startX, 50); // 시작점 좌표 (x, y)
       ctx.lineTo(startX, 260); // 끝점 좌표 (x, y)
@@ -229,15 +233,12 @@ export const GhostLeg: FC = () => {
       ctx.closePath(); // 경로 닫기
 
       /* 사다리 수평선 그리기 */
-      const lineGap = 28;
-      const startY = 40;
-
       ghostLegArray.map((position, ghostLegIdx) => {
         // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
         if (position[userIdx] == 1) {
           ctx.beginPath(); // 경로 시작
-          ctx.moveTo(startX, startY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
-          ctx.lineTo(startX + 50, startY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
+          ctx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
+          ctx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
           ctx.stroke(); // 선 그리기
           ctx.closePath(); // 경로 닫기
         }
@@ -251,10 +252,10 @@ export const GhostLeg: FC = () => {
   const moveAnimal = (animalIdx: number) => {
     if (isStart) {
       const canvas = canvasRef.current;
+      const result = calculateGhostLegResult(animalIdx);
 
       if (canvas) {
         const ctx = canvas.getContext("2d")!;
-
         // 선 스타일 설정
         ctx.strokeStyle = "yellow"; // 선 색상
         ctx.lineWidth = 5; // 선 두께
@@ -280,6 +281,17 @@ export const GhostLeg: FC = () => {
         drawLine();
       }
     }
+  };
+
+  /**
+   * 선택한 동물의 사다리 결과값 구하기
+   * @param animalIdx
+   */
+  const calculateGhostLegResult = (animalIdx: number) => {
+    console.log("animalIdx : ", animalIdx);
+    console.log("ghostLeg : ", ghostLeg);
+
+    console.log("result :", result);
   };
 
   /**
