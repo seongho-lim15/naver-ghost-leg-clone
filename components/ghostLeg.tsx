@@ -11,9 +11,23 @@ export const GhostLeg: FC = () => {
   const [isStart, setIsStart] = useState(false);
 
   useEffect(() => {
-    // 시작 초기화
-    setIsStart(false);
+    setIsStart(false); // 시작 초기화
+    drawAnimalImg(); // 동물 이미지 그리기
+  }, [userNum]);
 
+  /**
+   * 사다리 게임 시작. 사다리 그리기
+   */
+  useEffect(() => {
+    if (isStart) {
+      drawGhostLeg();
+    }
+  }, [isStart]);
+
+  /**
+   * 동물, 번호 이미지 그리기
+   */
+  const drawAnimalImg = (cb = null) => {
     const canvas = canvasRef.current;
 
     if (canvas) {
@@ -37,154 +51,167 @@ export const GhostLeg: FC = () => {
         const animalIcon = await loadImage("/images/animals.png");
         const numberIcons = await loadImage("/images/numbers.png");
 
+        const animalAndNumberIcons = await loadImage(
+          "/images/sprite_junis_small_v4.png"
+        );
+
         // 고해상도를 위해 캔버스 크기 조정
         const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
         // 캔버스의 실제 해상도를 높이기
-        canvas.width = 600 * dpr;
-        canvas.height = 308 * dpr;
+        canvas.width = 600;
+        canvas.height = 308;
 
-        // 공통 변수 설정
-        const cropX = 0;
-        const cropY = 0;
-        const cropWidth = 85 * userNum;
-        const cropHeight = 84;
+        const cropX = 0; // 이미지 크롭 시작 x 좌표
+        const cropY = 0; // 이미지 크롭 시작 y 좌표
+        const cropWidth = 50 * userNum; // 이미지 크롭 너비
+        const cropHeight = 50; // 이미지 크롭 높이
+        const canvasX = 0; // 이미지를 그릴 canvas 의 x 좌표
+        const canvasY = 0; // 이미지를 그릴 canvas 의 y 좌표
+        const destWidth = 50 * userNum;
+        const destHeight = 50;
 
-        // const canvasRatio = (canvas.width / canvas.height) * 0.5;
-        // const destWidth = (90 * userNum) / canvasRatio;
-        // const destHeight = 84 / canvasRatio;
-
-        const destWidth = 95 * userNum;
-        const destHeight = 84;
-
-        // 동물 아이콘 그리기
+        // 동물 아이콘 그림자 그리기
         ctx.drawImage(
-          animalIcon,
+          animalAndNumberIcons,
           cropX,
           cropY,
           cropWidth,
           cropHeight,
-          0,
-          0,
+          canvasX,
+          canvasY,
+          destWidth,
+          destHeight
+        );
+
+        // 동물 아이콘 그리기
+        ctx.drawImage(
+          animalAndNumberIcons,
+          cropX,
+          cropY + 50,
+          cropWidth,
+          cropHeight,
+          canvasX,
+          canvasY,
           destWidth,
           destHeight
         );
 
         // 숫자 아이콘 그리기
         ctx.drawImage(
-          numberIcons,
+          animalAndNumberIcons,
           cropX,
-          cropY,
+          cropY + 100,
           cropWidth,
           cropHeight,
           0,
-          canvas.height - 80,
+          canvas.height - 50,
           destWidth,
           destHeight
         );
+
+        cb(); // 콜백 함수 존재 시 호출
       };
 
       drawImages();
     }
-  }, [userNum]);
+  };
 
   /**
-   * 사다리 게임 시작. 사다리 그리기
+   * 사다리 그리기
    */
-  useEffect(() => {
-    if (isStart) {
-      const canvas = canvasRef.current;
+  const drawGhostLeg = () => {
+    const canvas = canvasRef.current;
 
-      if (canvas) {
-        const ctx = canvas.getContext("2d")!;
+    if (canvas) {
+      const ctx = canvas.getContext("2d")!;
 
-        /**
-         * 랜덤으로 사다리 배열 만들기
-         */
-        const makeRandomGhostLeg = () => {
-          const ghostLegArr: number[][] = [];
-          const firstAndLastEl = new Array(userNum - 1).fill(0);
+      /**
+       * 랜덤으로 사다리 배열 만들기
+       */
+      const makeRandomGhostLeg = () => {
+        const ghostLegArr: number[][] = [];
+        const firstAndLastEl = new Array(userNum - 1).fill(0);
 
-          ghostLegArr.push(firstAndLastEl);
-          ghostLegArr.push(firstAndLastEl);
+        ghostLegArr.push(firstAndLastEl);
+        ghostLegArr.push(firstAndLastEl);
 
-          // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 5개 행
-          new Array(5).fill(0).map(() => {
-            const arr = Array(userNum - 1).fill(0); // (유저수 - 1) 의 길이를 가진 배열 생성 예) [0, 0, 0, 0, 0]
-            const positions = Array(userNum - 1) // 인덱스 리스트
-              .fill(0)
-              .map((_, idx) => {
-                return idx;
-              });
+        // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 5개 행
+        new Array(5).fill(0).map(() => {
+          const ceil = Math.ceil((userNum - 1) / 2);
+          let count = 0; // 1의 개수
+          const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
 
-            const ceil = Math.ceil((userNum - 1) / 2);
-            let count = 0; // 1의 개수
-            const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
+          const arr = Array(userNum - 1).fill(0); // (유저수 - 1) 의 길이를 가진 배열 생성 예) [0, 0, 0, 0, 0]
+          const positions = Array(userNum - 1) // 인덱스 리스트
+            .fill(0)
+            .map((_, idx) => {
+              return idx;
+            });
 
-            // 인덱스를 무작위로 섞음
-            for (let i = positions.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [positions[i], positions[j]] = [positions[j], positions[i]];
-            }
+          // 인덱스를 무작위로 섞음
+          for (let i = positions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [positions[i], positions[j]] = [positions[j], positions[i]];
+          }
 
-            for (const pos of positions) {
-              // 현재 위치와 양쪽 인접 위치를 확인
-              if (
-                (pos === 0 || arr[pos - 1] === 0) &&
-                (pos === userNum - 2 || arr[pos + 1] === 0)
-              ) {
-                arr[pos] = 1;
-                count++;
-                // 1의 개수를 제한
-                if (count >= limitCnt) {
-                  // 필요한 1의 개수
-                  break;
-                }
+          for (const pos of positions) {
+            // 현재 위치와 양쪽 인접 위치를 확인
+            if (
+              (pos === 0 || arr[pos - 1] === 0) &&
+              (pos === userNum - 2 || arr[pos + 1] === 0)
+            ) {
+              arr[pos] = 1;
+              count++;
+              // 1의 개수를 제한
+              if (count >= limitCnt) {
+                // 필요한 1의 개수
+                break;
               }
             }
+          }
 
-            ghostLegArr.splice(1, 0, arr);
-          });
+          ghostLegArr.splice(1, 0, arr);
+        });
 
-          return ghostLegArr;
-        };
+        return ghostLegArr;
+      };
 
-        /**
-         * 사다리 배열에 맞춰 사다리 그리기
-         * @param userIdx
-         */
-        const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
-          // 선 스타일 설정
-          ctx.strokeStyle = "lightgrey"; // 선 색상
-          ctx.lineWidth = 12; // 선 두께
+      /**
+       * 사다리 배열에 맞춰 사다리 그리기
+       * @param userIdx
+       */
+      const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
+        // 선 스타일 설정
+        ctx.strokeStyle = "lightgrey"; // 선 색상
+        ctx.lineWidth = 12; // 선 두께
 
-          /* 수직선 그리기 */
-          const startX = 45 + userIdx * 95;
-          ctx.beginPath(); // 경로 시작
-          ctx.moveTo(startX, 100); // 시작점 좌표 (x, y)
-          ctx.lineTo(startX, 530); // 끝점 좌표 (x, y)
-          ctx.stroke(); // 선 그리기
-          ctx.closePath(); // 경로 닫기
+        /* 수직선 그리기 */
+        const startX = 45 + userIdx * 95;
+        ctx.beginPath(); // 경로 시작
+        ctx.moveTo(startX, 100); // 시작점 좌표 (x, y)
+        ctx.lineTo(startX, 530); // 끝점 좌표 (x, y)
+        ctx.stroke(); // 선 그리기
+        ctx.closePath(); // 경로 닫기
 
-          /* 사다리 수평선 그리기 */
-          ghostLegArray.map((position, ghostLegIdx) => {
-            // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
-            if (position[userIdx] == 1) {
-              ctx.beginPath(); // 경로 시작
-              ctx.moveTo(startX, 100 + ghostLegIdx * 70); // 시작점 좌표 (x, y)
-              ctx.lineTo(startX + 95, 100 + ghostLegIdx * 70); // 끝점 좌표 (x, y)
-              ctx.stroke(); // 선 그리기
-              ctx.closePath(); // 경로 닫기
-            }
-          });
-        };
+        /* 사다리 수평선 그리기 */
+        ghostLegArray.map((position, ghostLegIdx) => {
+          // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
+          if (position[userIdx] == 1) {
+            ctx.beginPath(); // 경로 시작
+            ctx.moveTo(startX, 100 + ghostLegIdx * 70); // 시작점 좌표 (x, y)
+            ctx.lineTo(startX + 95, 100 + ghostLegIdx * 70); // 끝점 좌표 (x, y)
+            ctx.stroke(); // 선 그리기
+            ctx.closePath(); // 경로 닫기
+          }
+        });
+      };
 
-        const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
-        new Array(userNum)
-          .fill(1)
-          .map((_, userIdx) => drawLine(userIdx, ghostLegArray)); // 사다리 그리기
-      }
+      const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+      new Array(userNum)
+        .fill(1)
+        .map((_, userIdx) => drawLine(userIdx, ghostLegArray)); // 사다리 그리기
     }
-  }, [isStart]);
+  };
 
   const increaseUser = () => {
     setUserNum((prevState) => (prevState >= 12 ? prevState : prevState + 1));
@@ -260,14 +287,18 @@ export const GhostLeg: FC = () => {
                     <div
                       className="situation"
                       style={{
-                        display: isStart ? "none" : "inline",
+                        display: "inline",
                       }}
                     >
-                      <p>각자 동물을 선택하고 사다리를 타보세요.</p>{" "}
+                      {isStart ? (
+                        <p>동물을 클릭하여 결과를 확인하세요.</p>
+                      ) : (
+                        <p>각자 동물을 선택하고 사다리를 타보세요.</p>
+                      )}{" "}
                       <a
                         href="#"
                         className="game_start"
-                        style={{ display: "inline" }}
+                        style={{ display: isStart ? "none" : "inline" }}
                         onClick={() => setIsStart(true)}
                       >
                         사다리 타기 시작하기
@@ -363,13 +394,22 @@ export const GhostLeg: FC = () => {
                     </div>
                     <div
                       className="result_area"
-                      style={{ display: "none" }}
+                      style={{ display: isStart ? "inline" : "none" }}
                     ></div>
-                    <div className="cntrol_btn" style={{ display: "none" }}>
+                    <div
+                      className="cntrol_btn"
+                      style={{ display: isStart ? "inline" : "none" }}
+                    >
                       <button type="button" className="relt">
                         결과보기
                       </button>
-                      <button type="button" className="again">
+                      <button
+                        type="button"
+                        className="again"
+                        onClick={() => {
+                          drawAnimalImg(drawGhostLeg);
+                        }}
+                      >
                         다시하기
                       </button>
                     </div>
