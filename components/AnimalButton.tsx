@@ -3,7 +3,7 @@ export const AnimalButtons = ({
   moveAnimal,
 }: {
   userNum: number;
-  moveAnimal: (idx: number) => void;
+  moveAnimal: (animalY: number, animalX: number) => void;
 }) => {
   return (
     <>
@@ -18,7 +18,7 @@ export const AnimalButtons = ({
             width: "50px",
             height: "50px",
           }}
-          onClick={() => moveAnimal(idx)}
+          onClick={() => moveAnimal(0, idx)}
         />
       ))}
     </>

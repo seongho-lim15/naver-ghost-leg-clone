@@ -26,7 +26,6 @@ export const GhostLeg: FC = () => {
       }
     }
 
-    console.log("nagi : ", nagi);
     setIsStart(false); // 시작 초기화
     drawAnimalImg(); // 동물 이미지 그리기
   }, [userNum]);
@@ -145,11 +144,18 @@ export const GhostLeg: FC = () => {
   /**
    * 사다리 선 그리기
    */
-  const drawGhostLeg = () => {
+  const drawGhostLeg = (beforeGhostLeg = []) => {
     const canvas = canvasRef.current;
 
     if (canvas) {
-      const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+      let ghostLegArray = null;
+
+      console.log("beforeGhostLeg.length : ", beforeGhostLeg.length);
+      if (beforeGhostLeg.length > 0) {
+        ghostLegArray = beforeGhostLeg;
+      } else {
+        ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+      }
       setGhostLeg(ghostLegArray); // 사다리 상태 저장
       // 사다리 그리기
       new Array(userNum)
@@ -163,42 +169,72 @@ export const GhostLeg: FC = () => {
    */
   const makeRandomGhostLeg = () => {
     const ghostLegArr: number[][] = [];
-    const firstAndLastEl = new Array(userNum - 1).fill(0);
+    const firstAndLastEl = Array.from({ length: userNum }, () => 0); // 사다리의 배열의 처음과 마지막 행
 
     ghostLegArr.push(firstAndLastEl);
     ghostLegArr.push(firstAndLastEl);
 
-    // 각 배열 요소에 어디에 1 이 들어갈껀지 세팅, 총 7개 행
-    new Array(7).fill(0).map(() => {
-      const ceil = Math.ceil((userNum - 1) / 2);
+    // 배열 요소 어디에 1 이 들어갈껀지 세팅, 총 7개 행
+    Array.from({ length: 7 }).forEach(() => {
       let count = 0; // 1의 개수
-      const limitCnt = Math.ceil(Math.random() * ceil); // 최대 1의 갯수
 
-      const arr = Array(userNum - 1).fill(0); // (유저수 - 1) 의 길이를 가진 배열 생성 예) [0, 0, 0, 0, 0]
-      const positions = Array(userNum - 1) // 인덱스 리스트
-        .fill(0)
-        .map((_, idx) => {
-          return idx;
-        });
+      const maxCntByUserNum = [0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4];
+      const limitCnt = Math.round(Math.random() * maxCntByUserNum[userNum - 1]); // 최대 1의 갯수
+
+      const arr = Array.from({ length: userNum }, () => 0); // 유저수 길이를 가진 배열 생성. 예) userNum == 5, arr == [0, 0, 0, 0, 0]
+      const positions = Array.from({ length: userNum - 1 }, (_, i) => i); // 인덱스 리스트 생성. 예) positions = [0, 1, 2, 3]
 
       // 인덱스를 무작위로 섞음
       for (let i = positions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(Math.random() * (i + 1)); // 0 <= x < 5, j 는 0,1,2,3,4 사이의 정수값
         [positions[i], positions[j]] = [positions[j], positions[i]];
+        // 위 코드를 실행하면 i=4, j=2 라고 했을 때, position[4] = position[2] 가 되고, position[2] = position[4] 가 된다.
+        // 이렇게 무작위로 섞인 인덱스 배열이 생성됨
       }
 
-      for (const pos of positions) {
-        // 현재 위치와 양쪽 인접 위치를 확인
+      // positions = [1,2,3,0] 라고 가정, index = 4 가 없는 이유는 마지막일 때는 1을 2개를 못 넣으니깐
+      // arr = [0, 0, 0, 0, 0], userNum = 5
+      for (const posIdx of positions) {
+        // 현재 위치가 0 일때
         if (
-          (pos === 0 || arr[pos - 1] === 0) &&
-          (pos === userNum - 2 || arr[pos + 1] === 0)
+          posIdx == 0 &&
+          arr[posIdx] == 0 &&
+          arr[posIdx + 1] == 0 &&
+          arr[posIdx + 2] == 0
         ) {
-          arr[pos] = 1;
+          arr[posIdx] = 1;
+          arr[posIdx + 1] = 1;
           count++;
-          // 1의 개수를 제한
-          if (count >= limitCnt) {
-            break;
-          }
+          count++;
+        }
+        // 현재 위치가 userNum - 2 일때,
+        else if (
+          posIdx == userNum - 2 &&
+          arr[posIdx] == 0 &&
+          arr[posIdx + 1] == 0 &&
+          arr[posIdx - 1] == 0
+        ) {
+          arr[posIdx] = 1;
+          arr[posIdx + 1] = 1;
+          count++;
+          count++;
+        }
+        // 현재 위치 값이 0 이고, 그 다음 위치 값이 0 이고, 그 전과 그 다다음의 위치 값이 0일 경우
+        else if (
+          arr[posIdx] == 0 &&
+          arr[posIdx + 1] == 0 &&
+          arr[posIdx + 2] == 0 &&
+          arr[posIdx - 1] == 0
+        ) {
+          arr[posIdx] = 1;
+          arr[posIdx + 1] = 1;
+          count++;
+          count++;
+        }
+
+        // 1의 개수를 제한
+        if (count >= limitCnt) {
+          break;
         }
       }
 
@@ -235,7 +271,7 @@ export const GhostLeg: FC = () => {
       /* 사다리 수평선 그리기 */
       ghostLegArray.map((position, ghostLegIdx) => {
         // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
-        if (position[userIdx] == 1) {
+        if (position[userIdx] == 1 && position[userIdx + 1] == 1) {
           ctx.beginPath(); // 경로 시작
           ctx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
           ctx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
@@ -246,13 +282,46 @@ export const GhostLeg: FC = () => {
     }
   };
 
+  const clickAnimal = (animalY: number, animalX: number) => {
+    let newAnimalX = animalX;
+    let newAnimalY = animalY;
+
+    // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
+    if (ghostLeg[animalY][animalX] === 0) {
+      newAnimalY++;
+    }
+    // 현재 좌표의 값이 1이고
+    else if (ghostLeg[animalY][animalX] === 1) {
+      // 다음 x 좌표값이 1인경우, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
+      if (ghostLeg[animalY][animalX + 1] === 1) {
+        newAnimalX++;
+        newAnimalY++;
+      }
+      // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
+      else if (ghostLeg[animalY][animalX - 1] === 1) {
+        newAnimalX--;
+        newAnimalY++;
+      }
+    }
+
+    moveAnimal(animalY, animalX, newAnimalY, newAnimalX);
+
+    if (newAnimalY !== 8) {
+      clickAnimal(newAnimalY, newAnimalX);
+    }
+  };
+
   /**
-   * 동물을 클릭해서 사다리 타기 시작
+   * 시작점 animalX, animalY 로 시작해서 사다리 타기
    */
-  const moveAnimal = (animalIdx: number) => {
+  const moveAnimal = (
+    animalY: number,
+    animalX: number,
+    newAnimalY: number,
+    newAnimalX: number
+  ) => {
     if (isStart) {
       const canvas = canvasRef.current;
-      const result = calculateGhostLegResult(animalIdx);
 
       if (canvas) {
         const ctx = canvas.getContext("2d")!;
@@ -260,22 +329,40 @@ export const GhostLeg: FC = () => {
         ctx.strokeStyle = "yellow"; // 선 색상
         ctx.lineWidth = 5; // 선 두께
 
-        const startX = 25 + animalIdx * 50; // 시작 X 좌표
-        const startY = 50; // 시작 Y 좌표
-        const endY = 260; // 끝 Y 좌표
+        const defaultStartY = 40; // 기본 사다리 시작 y 좌표
+
+        const startX = 25 + animalX * 50; // 시작 X 좌표
+        let startY = defaultStartY + 28 * animalY; // 시작 Y 좌표
+
+        if (animalY === 0) {
+          startY = startY + 10;
+        }
+
+        let currentX = startX; // 현재 X 좌표 (애니메이션 진행 상태)
         let currentY = startY; // 현재 Y 좌표 (애니메이션 진행 상태)
+
+        let endX = 25 + newAnimalX * 50; // 끝 X 좌표
+        let endY = defaultStartY + 28 * newAnimalY + 3; // 끝 Y 좌표
+
+        // let endX = 260; // 끝 X 좌표
+        // let endY = 260; // 끝 Y 좌표
 
         const drawLine = () => {
           ctx.beginPath(); // 경로 시작
           ctx.moveTo(startX, startY); // 시작점 좌표 (x, y)
-          ctx.lineTo(startX, currentY); // 끝점 좌표 (x, y)
+          ctx.lineTo(endX, startY); // 끝점 좌표 (x, y) 횡이동
+          ctx.lineTo(endX, endY); // 끝점 좌표 (x, y) 종이동
+
+          // ctx.lineTo(startX, currentY); // 끝점 좌표 (x, y) 횡이동
+          // ctx.lineTo(startX, currentY); // 끝점 좌표 (x, y) 종이동
+
           ctx.stroke(); // 선 그리기
           ctx.closePath(); // 경로 닫기
 
-          if (currentY < endY) {
-            currentY += 3; // 선을 아래로 확장 (속도 조정 가능)
-            requestAnimationFrame(drawLine); // 다음 프레임 요청
-          }
+          // if (currentY < endY) {
+          //   currentY += 3; // 선을 아래로 확장 (속도 조정 가능)
+          //   requestAnimationFrame(drawLine); // 다음 프레임 요청
+          // }
         };
 
         drawLine();
@@ -452,7 +539,12 @@ export const GhostLeg: FC = () => {
                           >
                             <AnimalButtons
                               userNum={userNum}
-                              moveAnimal={moveAnimal}
+                              moveAnimal={(
+                                animalY: number,
+                                animalX: number
+                              ) => {
+                                clickAnimal(animalY, animalX);
+                              }}
                             />
                           </div>
                         </div>
