@@ -16,6 +16,8 @@ export const GhostLeg: FC = () => {
     null
   );
 
+  const [targetAnimal, setTargetAnimal] = useState<number | null>(null);
+
   useEffect(() => {
     setDomLoaded(true);
   }, []);
@@ -30,7 +32,9 @@ export const GhostLeg: FC = () => {
       }
     }
 
+    setTargetAnimal(null); // 타겟 초기화
     setIsStart(false); // 시작 초기화
+    setDefaultCanvas(null); // 기본 캔버스 초기화
     drawAnimalImg(); // 동물 이미지 그리기
   }, [userNum]);
 
@@ -148,19 +152,14 @@ export const GhostLeg: FC = () => {
   /**
    * 사다리 선 그리기
    */
-  const drawGhostLeg = (beforeGhostLeg = []) => {
+  const drawGhostLeg = () => {
     const canvas = canvasRef.current;
 
     if (canvas) {
-      let ghostLegArray = null;
-
-      console.log("beforeGhostLeg.length : ", beforeGhostLeg.length);
-      if (beforeGhostLeg.length > 0) {
-        ghostLegArray = beforeGhostLeg;
-      } else {
-        ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
-      }
+      const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+      console.log("ghostLegArray : ", ghostLegArray);
       setGhostLeg(ghostLegArray); // 사다리 상태 저장
+
       // 사다리 그리기
       new Array(userNum)
         .fill(1)
@@ -182,8 +181,8 @@ export const GhostLeg: FC = () => {
     Array.from({ length: 7 }).forEach(() => {
       let count = 0; // 1의 개수
 
-      const maxCntByUserNum = [0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4];
-      const limitCnt = Math.round(Math.random() * maxCntByUserNum[userNum - 1]); // 최대 1의 갯수
+      const maxCntByUserNum = [0, 2, 2, 2, 4, 4, 4, 6, 6, 6, 8, 8];
+      const limitCnt = maxCntByUserNum[userNum - 1]; // 최대 1의 갯수
 
       const arr = Array.from({ length: userNum }, () => 0); // 유저수 길이를 가진 배열 생성. 예) userNum == 5, arr == [0, 0, 0, 0, 0]
       const positions = Array.from({ length: userNum - 1 }, (_, i) => i); // 인덱스 리스트 생성. 예) positions = [0, 1, 2, 3]
@@ -286,6 +285,11 @@ export const GhostLeg: FC = () => {
     }
   };
 
+  /**
+   * 동물 클릭해 사다리 타기 시작
+   * @param initalAnimalY
+   * @param initialAnimalX
+   */
   const clickAnimal = (initalAnimalY: number, initialAnimalX: number) => {
     /**
      * 재귀를 통해 이동
@@ -348,6 +352,15 @@ export const GhostLeg: FC = () => {
 
       move(initalAnimalY, initialAnimalX);
     }
+  };
+
+  /**
+   * 다시하기 버튼 클릭 시, 사다리 다시 그림
+   */
+  const reDrawGhostReg = () => {
+    setDefaultCanvas(null); // 캔버스 초기화
+    setTargetAnimal(null); // 타겟 초기화
+    drawAnimalImg(drawGhostLeg);
   };
 
   /**
@@ -442,6 +455,14 @@ export const GhostLeg: FC = () => {
         await drawLineY();
       }
     }
+  };
+
+  /**
+   * 타겟 세팅
+   * @param animalX
+   */
+  const handleTarget = (animalX: number) => {
+    setTargetAnimal((prevState) => (prevState ? null : animalX));
   };
 
   /**
@@ -608,7 +629,11 @@ export const GhostLeg: FC = () => {
                                 animalY: number,
                                 animalX: number
                               ) => {
-                                clickAnimal(animalY, animalX);
+                                if (isStart) {
+                                  clickAnimal(animalY, animalX);
+                                } else {
+                                  handleTarget(animalX);
+                                }
                               }}
                             />
                           </div>
@@ -646,8 +671,7 @@ export const GhostLeg: FC = () => {
                         type="button"
                         className="again"
                         onClick={() => {
-                          setDefaultCanvas(null);
-                          drawAnimalImg(drawGhostLeg);
+                          reDrawGhostReg();
                         }}
                       >
                         다시하기
