@@ -430,7 +430,7 @@ export const GhostLeg: FC = () => {
 
             const animate = () => {
               ctx.beginPath(); // 경로 시작
-              ctx.moveTo(endX, startY); // 시작점 좌표 (x, y)
+              ctx.moveTo(endX, startY - 3); // 시작점 좌표 (x, y)
               ctx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
 
               ctx.stroke(); // 선 그리기
