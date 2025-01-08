@@ -270,34 +270,34 @@ export const GhostLeg: FC = () => {
    * @param userIdx
    */
   const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
-    const fgCanvas = fgCanvasRef.current;
+    const bgCanvas = bgCanvasRef.current;
 
-    if (fgCanvas) {
-      const fgCtx = fgCanvas.getContext("2d")!;
+    if (bgCanvas) {
+      const bgCtx = bgCanvas.getContext("2d")!;
       // 선 스타일 설정
-      fgCtx.strokeStyle = "lightgrey"; // 선 색상
-      fgCtx.lineWidth = 5; // 선 두께
+      bgCtx.strokeStyle = "lightgrey"; // 선 색상
+      bgCtx.lineWidth = 5; // 선 두께
 
       const startX = 25 + userIdx * 50; // 사다리 시작 x 좌표
       const defaultStartY = 40; // 기본 사다리 시작 y 좌표
       const lineGap = 28; // 수평 사다리 사이 높이
 
       /* 수직선 그리기 */
-      fgCtx.beginPath(); // 경로 시작
-      fgCtx.moveTo(startX, 50); // 시작점 좌표 (x, y)
-      fgCtx.lineTo(startX, 260); // 끝점 좌표 (x, y)
-      fgCtx.stroke(); // 선 그리기
-      fgCtx.closePath(); // 경로 닫기
+      bgCtx.beginPath(); // 경로 시작
+      bgCtx.moveTo(startX, 50); // 시작점 좌표 (x, y)
+      bgCtx.lineTo(startX, 260); // 끝점 좌표 (x, y)
+      bgCtx.stroke(); // 선 그리기
+      bgCtx.closePath(); // 경로 닫기
 
       /* 사다리 수평선 그리기 */
       ghostLegArray.map((position, ghostLegIdx) => {
         // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
         if (position[userIdx] == 1 && position[userIdx + 1] == 1) {
-          fgCtx.beginPath(); // 경로 시작
-          fgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
-          fgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
-          fgCtx.stroke(); // 선 그리기
-          fgCtx.closePath(); // 경로 닫기
+          bgCtx.beginPath(); // 경로 시작
+          bgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
+          bgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
+          bgCtx.stroke(); // 선 그리기
+          bgCtx.closePath(); // 경로 닫기
         }
       });
     }
