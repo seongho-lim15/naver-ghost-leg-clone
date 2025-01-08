@@ -12,7 +12,9 @@ export const GhostLeg: FC = () => {
   const [isStart, setIsStart] = useState(false);
   const [nagi, setNagi] = useState<{ [key: number]: string }>({});
   const [ghostLeg, setGhostLeg] = useState<number[][]>([]);
-  const [defaultCanvas, setDefaultCanvas] = useState(null);
+  const [defaultCanvas, setDefaultCanvas] = useState<HTMLCanvasElement | null>(
+    null
+  );
 
   useEffect(() => {
     setDomLoaded(true);
@@ -135,7 +137,7 @@ export const GhostLeg: FC = () => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(offCanvas, 0, 0);
 
-          cb && cb(); // 콜백 함수 존재 시 호출
+          if (cb) cb(); // 콜백 함수 존재 시 호출
         };
 
         drawImages();
@@ -402,7 +404,7 @@ export const GhostLeg: FC = () => {
                 }
                 requestAnimationFrame(animate); // 다음 프레임 요청
               } else {
-                resolve(); // 횡 이동 완료 시 Promise 해결
+                resolve(true); // 횡 이동 완료 시 Promise 해결
               }
             };
             animate();
@@ -429,7 +431,7 @@ export const GhostLeg: FC = () => {
                 }
                 requestAnimationFrame(animate); // 다음 프레임 요청
               } else {
-                resolve(); // 종 이동 완료 시 Promise 해결
+                resolve(true); // 종 이동 완료 시 Promise 해결
               }
             };
             animate();

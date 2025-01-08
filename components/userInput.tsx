@@ -9,7 +9,10 @@ export const UserInput = ({
   nagi: { [key: number]: string };
   setNagi: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>;
 }) => {
-  const handleChangeNagi = (e: any, idx: number) => {
+  const handleChangeNagi = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    idx: number
+  ) => {
     const changeNagiText = e.target.value;
 
     setNagi((prevState) => {
