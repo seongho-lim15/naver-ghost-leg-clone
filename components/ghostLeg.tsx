@@ -12,6 +12,8 @@ export const GhostLeg: FC = () => {
   const [isStart, setIsStart] = useState(false);
   const [nagi, setNagi] = useState<{ [key: number]: string }>({});
   const [ghostLeg, setGhostLeg] = useState<number[][]>([]);
+  const [defaultCanvas, setDefaultCanvas] = useState(null);
+
   useEffect(() => {
     setDomLoaded(true);
   }, []);
@@ -282,39 +284,74 @@ export const GhostLeg: FC = () => {
     }
   };
 
-  const clickAnimal = (animalY: number, animalX: number) => {
-    let newAnimalX = animalX;
-    let newAnimalY = animalY;
+  const clickAnimal = (initalAnimalY: number, initialAnimalX: number) => {
+    /**
+     * 재귀를 통해 이동
+     * @param animalY
+     * @param animalX
+     */
+    const move = async (animalY: number, animalX: number) => {
+      let newAnimalX = animalX;
+      let newAnimalY = animalY;
 
-    // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
-    if (ghostLeg[animalY][animalX] === 0) {
-      newAnimalY++;
-    }
-    // 현재 좌표의 값이 1이고
-    else if (ghostLeg[animalY][animalX] === 1) {
-      // 다음 x 좌표값이 1인경우, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
-      if (ghostLeg[animalY][animalX + 1] === 1) {
-        newAnimalX++;
+      // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
+      if (ghostLeg[animalY][animalX] === 0) {
         newAnimalY++;
       }
-      // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
-      else if (ghostLeg[animalY][animalX - 1] === 1) {
-        newAnimalX--;
-        newAnimalY++;
+      // 현재 좌표의 값이 1이고
+      else if (ghostLeg[animalY][animalX] === 1) {
+        // 다음 x 좌표값이 1인경우, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
+        if (ghostLeg[animalY][animalX + 1] === 1) {
+          newAnimalX++;
+          newAnimalY++;
+        }
+        // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
+        else if (ghostLeg[animalY][animalX - 1] === 1) {
+          newAnimalX--;
+          newAnimalY++;
+        }
       }
-    }
 
-    moveAnimal(animalY, animalX, newAnimalY, newAnimalX);
+      await moveAnimal(animalY, animalX, newAnimalY, newAnimalX);
 
-    if (newAnimalY !== 8) {
-      clickAnimal(newAnimalY, newAnimalX);
+      if (newAnimalY !== 8) {
+        await move(newAnimalY, newAnimalX);
+      }
+    };
+
+    // 오프스크린 캔버스 생성
+    const canvas = canvasRef.current;
+
+    if (canvas) {
+      const ctx = canvas.getContext("2d")!;
+      // 오프 캔버스 생성
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = canvas.width;
+      offCanvas.height = canvas.height;
+      const offCtx = offCanvas.getContext("2d");
+
+      // 기존 캔버스가 존재할 시
+      if (defaultCanvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // 캔버스를 완전히 초기화
+        ctx.drawImage(defaultCanvas, 0, 0);
+      }
+
+      // 기존 캔버스 세팅
+      if (offCtx) {
+        // 오프 캔버스에 현재 캔버스 저장
+        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); // 오프스크린 캔버스 초기화
+        offCtx.drawImage(canvas, 0, 0);
+        setDefaultCanvas(offCanvas);
+      }
+
+      move(initalAnimalY, initialAnimalX);
     }
   };
 
   /**
    * 시작점 animalX, animalY 로 시작해서 사다리 타기
    */
-  const moveAnimal = (
+  const moveAnimal = async (
     animalY: number,
     animalX: number,
     newAnimalY: number,
@@ -334,6 +371,7 @@ export const GhostLeg: FC = () => {
         const startX = 25 + animalX * 50; // 시작 X 좌표
         let startY = defaultStartY + 28 * animalY; // 시작 Y 좌표
 
+        // 시작점일 경우
         if (animalY === 0) {
           startY = startY + 10;
         }
@@ -341,42 +379,67 @@ export const GhostLeg: FC = () => {
         let currentX = startX; // 현재 X 좌표 (애니메이션 진행 상태)
         let currentY = startY; // 현재 Y 좌표 (애니메이션 진행 상태)
 
-        let endX = 25 + newAnimalX * 50; // 끝 X 좌표
-        let endY = defaultStartY + 28 * newAnimalY + 3; // 끝 Y 좌표
+        const endX = 25 + newAnimalX * 50; // 끝 X 좌표
+        const endY = defaultStartY + 28 * newAnimalY + 3; // 끝 Y 좌표
 
-        // let endX = 260; // 끝 X 좌표
-        // let endY = 260; // 끝 Y 좌표
+        const drawLineX = () => {
+          return new Promise((resolve) => {
+            const speed = 10; // 속도를 조정하려면 이 값을 변경
 
-        const drawLine = () => {
-          ctx.beginPath(); // 경로 시작
-          ctx.moveTo(startX, startY); // 시작점 좌표 (x, y)
-          ctx.lineTo(endX, startY); // 끝점 좌표 (x, y) 횡이동
-          ctx.lineTo(endX, endY); // 끝점 좌표 (x, y) 종이동
+            const animate = () => {
+              ctx.beginPath(); // 경로 시작
+              ctx.moveTo(startX, startY); // 시작점 좌표 (x, y)
+              ctx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
 
-          // ctx.lineTo(startX, currentY); // 끝점 좌표 (x, y) 횡이동
-          // ctx.lineTo(startX, currentY); // 끝점 좌표 (x, y) 종이동
+              ctx.stroke(); // 선 그리기
+              ctx.closePath(); // 경로 닫기
 
-          ctx.stroke(); // 선 그리기
-          ctx.closePath(); // 경로 닫기
-
-          // if (currentY < endY) {
-          //   currentY += 3; // 선을 아래로 확장 (속도 조정 가능)
-          //   requestAnimationFrame(drawLine); // 다음 프레임 요청
-          // }
+              if (currentX !== endX) {
+                if (currentX < endX) {
+                  currentX += Math.min(speed, endX - currentX); // 오른쪽으로 확장
+                } else {
+                  currentX -= Math.min(speed, currentX - endX); // 왼쪽으로 축소
+                }
+                requestAnimationFrame(animate); // 다음 프레임 요청
+              } else {
+                resolve(); // 횡 이동 완료 시 Promise 해결
+              }
+            };
+            animate();
+          });
         };
 
-        drawLine();
+        const drawLineY = () => {
+          return new Promise((resolve) => {
+            const speed = 5; // 속도를 조정하려면 이 값을 변경
+
+            const animate = () => {
+              ctx.beginPath(); // 경로 시작
+              ctx.moveTo(endX, startY); // 시작점 좌표 (x, y)
+              ctx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
+
+              ctx.stroke(); // 선 그리기
+              ctx.closePath(); // 경로 닫기
+
+              if (currentY !== endY) {
+                if (currentY < endY) {
+                  currentY += Math.min(speed, endY - currentY); // 아래로 확장
+                } else {
+                  currentY -= Math.min(speed, currentY - endY); // 위로 축소
+                }
+                requestAnimationFrame(animate); // 다음 프레임 요청
+              } else {
+                resolve(); // 종 이동 완료 시 Promise 해결
+              }
+            };
+            animate();
+          });
+        };
+
+        await drawLineX();
+        await drawLineY();
       }
     }
-  };
-
-  /**
-   * 선택한 동물의 사다리 결과값 구하기
-   * @param animalIdx
-   */
-  const calculateGhostLegResult = (animalIdx: number) => {
-    console.log("animalIdx : ", animalIdx);
-    console.log("ghostLeg : ", ghostLeg);
   };
 
   /**
@@ -581,6 +644,7 @@ export const GhostLeg: FC = () => {
                         type="button"
                         className="again"
                         onClick={() => {
+                          setDefaultCanvas(null);
                           drawAnimalImg(drawGhostLeg);
                         }}
                       >
