@@ -13,6 +13,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "noUnusedLocals": false, // 사용하지 않는 지역 변수 경고 비활성화
+    "noUnusedParameters": false, // 사용하지 않는 매개변수 경고 비활성화
     "plugins": [
       {
         "name": "next"
