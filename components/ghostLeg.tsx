@@ -8,7 +8,8 @@ export const GhostLeg: FC = () => {
   const [domLoaded, setDomLoaded] = useState(false);
   const [userNum, setUserNum] = useState<number>(2);
   const [containerPixel, setContainerPixel] = useState<number>(100);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null); // 백그라운드 캔버스
+  const fgCanvasRef = useRef<HTMLCanvasElement | null>(null); // 사다리 타기 라인 캔버스
   const [isStart, setIsStart] = useState(false);
   const [nagi, setNagi] = useState<{ [key: number]: string }>({});
   const [ghostLeg, setGhostLeg] = useState<number[][]>([]);
@@ -26,6 +27,7 @@ export const GhostLeg: FC = () => {
    * 인원 수 변경
    */
   useEffect(() => {
+    // 내기 설정
     for (let i = 0; i < userNum; i++) {
       if (!nagi[i]) {
         nagi[i] = "";
@@ -35,6 +37,7 @@ export const GhostLeg: FC = () => {
     setTargetAnimal(null); // 타겟 초기화
     setIsStart(false); // 시작 초기화
     setDefaultCanvas(null); // 기본 캔버스 초기화
+
     drawAnimalImg(); // 동물 이미지 그리기
   }, [userNum]);
 
@@ -43,7 +46,7 @@ export const GhostLeg: FC = () => {
    */
   useEffect(() => {
     if (isStart) {
-      drawGhostLeg();
+      drawGhostLegLine();
     }
   }, [isStart]);
 
@@ -51,22 +54,29 @@ export const GhostLeg: FC = () => {
    * 동물, 번호 이미지 그리기
    */
   const drawAnimalImg = (cb: (() => void) | null = null) => {
-    const canvas = canvasRef.current;
+    const bgCanvas = bgCanvasRef.current;
+    const fgCanvas = fgCanvasRef.current;
 
-    if (canvas) {
-      const ctx = canvas.getContext("2d")!;
+    if (bgCanvas && fgCanvas) {
+      const bgCtx = bgCanvas.getContext("2d")!;
+      const fgCtx = fgCanvas.getContext("2d")!;
 
-      // 오프스크린 캔버스 생성
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width = canvas.width;
-      offCanvas.height = canvas.height;
-      const offCtx = offCanvas.getContext("2d");
+      const bgOffCanvas = document.createElement("canvas"); // 백그라운드 오프스크린 캔버스 생성
+      bgOffCanvas.width = bgCanvas.width;
+      bgOffCanvas.height = bgCanvas.height;
+      const bgOffCtx = bgOffCanvas.getContext("2d");
 
-      if (offCtx) {
-        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+      const fgOffCanvas = document.createElement("canvas"); // 포그라운드 오프스크린 캔버스 생성
+      fgOffCanvas.width = fgCanvas.width;
+      fgOffCanvas.height = fgCanvas.height;
+      const fgOffCtx = fgOffCanvas.getContext("2d");
+
+      if (bgOffCtx && fgOffCtx) {
+        bgOffCtx.clearRect(0, 0, bgOffCanvas.width, bgOffCanvas.height); // 백그라운드 오프스크린 캔버스 초기화
+        fgOffCtx.clearRect(0, 0, bgOffCanvas.width, bgOffCanvas.height); // 포그라운드 오프스크린 캔버스 초기화
 
         /**
-         * 이미지 로드 함수
+         * 이미지 로드
          * @param src
          */
         const loadImage = (src: string) => {
@@ -77,7 +87,9 @@ export const GhostLeg: FC = () => {
           });
         };
 
-        // 이미지 로드 후 그리기
+        /**
+         * 이미지 로드 완료된 후, 캔버스에 이미지 그리기
+         */
         const drawImages = async () => {
           const animalAndNumberIcons = await loadImage(
             "/images/sprite_junis_small_v4.png"
@@ -87,8 +99,10 @@ export const GhostLeg: FC = () => {
           // const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
 
           // 캔버스의 실제 해상도를 높이기
-          canvas.width = 600;
-          canvas.height = 308;
+          bgCanvas.width = 600;
+          bgCanvas.height = 308;
+          fgCanvas.width = 600;
+          fgCanvas.height = 308;
 
           const cropX = 0; // 이미지 크롭 시작 x 좌표
           const cropY = 0; // 이미지 크롭 시작 y 좌표
@@ -99,8 +113,8 @@ export const GhostLeg: FC = () => {
           const destWidth = 50 * userNum;
           const destHeight = 50;
 
-          // 동물 아이콘 그림자 그리기
-          offCtx.drawImage(
+          // 백그라운드에 동물 아이콘 그림자 그리기
+          bgOffCtx.drawImage(
             animalAndNumberIcons,
             cropX,
             cropY,
@@ -112,8 +126,21 @@ export const GhostLeg: FC = () => {
             destHeight
           );
 
-          // 동물 아이콘 그리기
-          offCtx.drawImage(
+          // 백그라운드에 숫자 아이콘 그리기
+          bgOffCtx.drawImage(
+            animalAndNumberIcons,
+            cropX,
+            cropY + 100,
+            cropWidth,
+            cropHeight,
+            0,
+            bgCanvas.height - 50,
+            destWidth,
+            destHeight
+          );
+
+          // 포그라운드에 동물 아이콘 그리기
+          fgOffCtx.drawImage(
             animalAndNumberIcons,
             cropX,
             cropY + 50,
@@ -125,21 +152,13 @@ export const GhostLeg: FC = () => {
             destHeight
           );
 
-          // 숫자 아이콘 그리기
-          offCtx.drawImage(
-            animalAndNumberIcons,
-            cropX,
-            cropY + 100,
-            cropWidth,
-            cropHeight,
-            0,
-            canvas.height - 50,
-            destWidth,
-            destHeight
-          );
+          // 백그라운드 캔버스 초기화 후, 백그라운드 오프캔버스를 옮겨 그림
+          bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+          bgCtx.drawImage(bgOffCanvas, 0, 0);
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(offCanvas, 0, 0);
+          // 포그라운드 캔버스 초기화 후, 포그라운드 오프캔버스를 옮겨 그림
+          fgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+          fgCtx.drawImage(fgOffCanvas, 0, 0);
 
           if (cb) cb(); // 콜백 함수 존재 시 호출
         };
@@ -150,14 +169,13 @@ export const GhostLeg: FC = () => {
   };
 
   /**
-   * 사다리 선 그리기
+   * 사다리 타기 선 그리기
    */
-  const drawGhostLeg = () => {
-    const canvas = canvasRef.current;
+  const drawGhostLegLine = () => {
+    const canvas = fgCanvasRef.current;
 
     if (canvas) {
       const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
-      console.log("ghostLegArray : ", ghostLegArray);
       setGhostLeg(ghostLegArray); // 사다리 상태 저장
 
       // 사다리 그리기
@@ -252,34 +270,34 @@ export const GhostLeg: FC = () => {
    * @param userIdx
    */
   const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
-    const canvas = canvasRef.current;
+    const fgCanvas = fgCanvasRef.current;
 
-    if (canvas) {
-      const ctx = canvas.getContext("2d")!;
+    if (fgCanvas) {
+      const fgCtx = fgCanvas.getContext("2d")!;
       // 선 스타일 설정
-      ctx.strokeStyle = "lightgrey"; // 선 색상
-      ctx.lineWidth = 5; // 선 두께
+      fgCtx.strokeStyle = "lightgrey"; // 선 색상
+      fgCtx.lineWidth = 5; // 선 두께
 
       const startX = 25 + userIdx * 50; // 사다리 시작 x 좌표
       const defaultStartY = 40; // 기본 사다리 시작 y 좌표
       const lineGap = 28; // 수평 사다리 사이 높이
 
       /* 수직선 그리기 */
-      ctx.beginPath(); // 경로 시작
-      ctx.moveTo(startX, 50); // 시작점 좌표 (x, y)
-      ctx.lineTo(startX, 260); // 끝점 좌표 (x, y)
-      ctx.stroke(); // 선 그리기
-      ctx.closePath(); // 경로 닫기
+      fgCtx.beginPath(); // 경로 시작
+      fgCtx.moveTo(startX, 50); // 시작점 좌표 (x, y)
+      fgCtx.lineTo(startX, 260); // 끝점 좌표 (x, y)
+      fgCtx.stroke(); // 선 그리기
+      fgCtx.closePath(); // 경로 닫기
 
       /* 사다리 수평선 그리기 */
       ghostLegArray.map((position, ghostLegIdx) => {
         // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
         if (position[userIdx] == 1 && position[userIdx + 1] == 1) {
-          ctx.beginPath(); // 경로 시작
-          ctx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
-          ctx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
-          ctx.stroke(); // 선 그리기
-          ctx.closePath(); // 경로 닫기
+          fgCtx.beginPath(); // 경로 시작
+          fgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
+          fgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
+          fgCtx.stroke(); // 선 그리기
+          fgCtx.closePath(); // 경로 닫기
         }
       });
     }
@@ -287,10 +305,10 @@ export const GhostLeg: FC = () => {
 
   /**
    * 동물 클릭해 사다리 타기 시작
-   * @param initalAnimalY
+   * @param initialAnimalY
    * @param initialAnimalX
    */
-  const clickAnimal = (initalAnimalY: number, initialAnimalX: number) => {
+  const clickAnimal = (initialAnimalY: number, initialAnimalX: number) => {
     /**
      * 재귀를 통해 이동
      * @param animalY
@@ -318,39 +336,44 @@ export const GhostLeg: FC = () => {
         }
       }
 
-      await moveAnimal(animalY, animalX, newAnimalY, newAnimalX);
+      // 기존 좌표에서 이동할 좌표로 사다리를 타고 이동하는 동물 그리기
+      await drawMovingAnimalLine(animalY, animalX, newAnimalY, newAnimalX);
 
+      // 마지막 행일 때까지 재귀호출
       if (newAnimalY !== 8) {
         await move(newAnimalY, newAnimalX);
       }
     };
 
     // 오프스크린 캔버스 생성
-    const canvas = canvasRef.current;
+    const bgCanvas = bgCanvasRef.current;
+    const fgCanvas = fgCanvasRef.current;
 
-    if (canvas) {
-      const ctx = canvas.getContext("2d")!;
+    if (bgCanvas && fgCanvas) {
+      const bgCtx = bgCanvas.getContext("2d")!;
+      const fgCtx = fgCanvas.getContext("2d")!;
+
       // 오프 캔버스 생성
       const offCanvas = document.createElement("canvas");
-      offCanvas.width = canvas.width;
-      offCanvas.height = canvas.height;
+      offCanvas.width = bgCanvas.width;
+      offCanvas.height = bgCanvas.height;
       const offCtx = offCanvas.getContext("2d");
 
       // 기존 캔버스가 존재할 시
       if (defaultCanvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // 캔버스를 완전히 초기화
-        ctx.drawImage(defaultCanvas, 0, 0);
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height); // 캔버스를 완전히 초기화
+        bgCtx.drawImage(defaultCanvas, 0, 0);
       }
 
       // 기존 캔버스 세팅
       if (offCtx) {
         // 오프 캔버스에 현재 캔버스 저장
         offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); // 오프스크린 캔버스 초기화
-        offCtx.drawImage(canvas, 0, 0);
+        offCtx.drawImage(bgCanvas, 0, 0);
         setDefaultCanvas(offCanvas);
       }
 
-      move(initalAnimalY, initialAnimalX);
+      move(initialAnimalY, initialAnimalX);
     }
   };
 
@@ -360,20 +383,21 @@ export const GhostLeg: FC = () => {
   const reDrawGhostReg = () => {
     setDefaultCanvas(null); // 캔버스 초기화
     setTargetAnimal(null); // 타겟 초기화
-    drawAnimalImg(drawGhostLeg);
+
+    drawAnimalImg(drawGhostLegLine);
   };
 
   /**
-   * 시작점 animalX, animalY 로 시작해서 사다리 타기
+   * 시작점 animalX, animalY 로 시작해서 사다리 타기 라인 그리기
    */
-  const moveAnimal = async (
+  const drawMovingAnimalLine = async (
     animalY: number,
     animalX: number,
     newAnimalY: number,
     newAnimalX: number
   ) => {
     if (isStart) {
-      const canvas = canvasRef.current;
+      const canvas = bgCanvasRef.current;
 
       if (canvas) {
         const ctx = canvas.getContext("2d")!;
@@ -590,6 +614,7 @@ export const GhostLeg: FC = () => {
                         >
                           <canvas
                             className="_bgCanvasPane"
+                            ref={bgCanvasRef}
                             style={{
                               position: "absolute",
                               top: 0,
@@ -601,7 +626,7 @@ export const GhostLeg: FC = () => {
                           ></canvas>
                           <canvas
                             className="_fgCanvasPane"
-                            ref={canvasRef}
+                            ref={fgCanvasRef}
                             style={{
                               position: "absolute",
                               top: 0,
@@ -685,53 +710,6 @@ export const GhostLeg: FC = () => {
                       nagi={nagi}
                       setNagi={setNagi}
                     />
-
-                    {/*<div className="btn_area">*/}
-                    {/*  <button type="button" className="rfsh">*/}
-                    {/*    초기화*/}
-                    {/*  </button>*/}
-                    {/*  <button type="button" className="rndm">*/}
-                    {/*    추천내기*/}
-                    {/*    <span>*/}
-                    {/*      <span className="hc">열기</span>*/}
-                    {/*    </span>*/}
-                    {/*  </button>*/}
-                    {/*</div>*/}
-                    {/*<div className="recom_area" style={{ display: "none" }}>*/}
-                    {/*  <div className="rcm_lst">*/}
-                    {/*    <div className="line">*/}
-                    {/*      <h5 className="hc">추천내기 리스트</h5>*/}
-                    {/*      <ul className="rcm">*/}
-                    {/*        <li>*/}
-                    {/*          <a href="#">간식내기</a>*/}
-                    {/*        </li>*/}
-                    {/*        <li>*/}
-                    {/*          <a href="#">벌칙자뽑기</a>*/}
-                    {/*        </li>*/}
-                    {/*        <li>*/}
-                    {/*          <a href="#">당첨자뽑기</a>*/}
-                    {/*        </li>*/}
-                    {/*        <li>*/}
-                    {/*          <a href="#">순서정하기</a>*/}
-                    {/*        </li>*/}
-                    {/*        <li>*/}
-                    {/*          <a href="#">편나누기</a>*/}
-                    {/*        </li>*/}
-                    {/*        <li>*/}
-                    {/*          <a href="#">조모임역할</a>*/}
-                    {/*        </li>*/}
-                    {/*      </ul>*/}
-                    {/*      <h5>추천내기</h5>*/}
-                    {/*      <ul className="rcn_noti">*/}
-                    {/*        <li>상황별로 내기를 추천해드리는 기능입니다</li>*/}
-                    {/*        <li>*/}
-                    {/*          자동으로 입력된 내용이 불필요하다면 초기화 로*/}
-                    {/*          삭제하시거나 조금씩 수정하여 사용해 보세요.*/}
-                    {/*        </li>*/}
-                    {/*      </ul>*/}
-                    {/*    </div>*/}
-                    {/*  </div>*/}
-                    {/*</div>*/}
                   </div>
                 </div>
                 <div className="spe_slc">
