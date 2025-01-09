@@ -13,7 +13,8 @@ export const GhostLeg: FC = () => {
   const [isStart, setIsStart] = useState(false);
   const [nagi, setNagi] = useState<{ [key: number]: string }>({});
   const [ghostLeg, setGhostLeg] = useState<number[][]>([]);
-  const [defaultCanvas, setDefaultCanvas] = useState<HTMLCanvasElement | null>(
+  // 이전 포그라운드 캔버스
+  const [prevFgCanvas, setPrevFgCanvas] = useState<HTMLCanvasElement | null>(
     null
   );
 
@@ -36,7 +37,7 @@ export const GhostLeg: FC = () => {
 
     setTargetAnimal(null); // 타겟 초기화
     setIsStart(false); // 시작 초기화
-    setDefaultCanvas(null); // 기본 캔버스 초기화
+    setPrevFgCanvas(null); // 기본 캔버스 초기화
 
     drawAnimalImg(); // 동물 이미지 그리기
   }, [userNum]);
@@ -169,7 +170,7 @@ export const GhostLeg: FC = () => {
   };
 
   /**
-   * 사다리 타기 선 그리기
+   * 사다리 타기 기본선 그리기
    */
   const drawGhostLegLine = () => {
     const canvas = fgCanvasRef.current;
@@ -266,7 +267,7 @@ export const GhostLeg: FC = () => {
   };
 
   /**
-   * 사다리 배열에 맞춰 사다리 선 그리기
+   * 사다리 배열에 맞춰 사다리 기본선 그리기
    * @param userIdx
    */
   const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
@@ -345,32 +346,29 @@ export const GhostLeg: FC = () => {
       }
     };
 
-    // 오프스크린 캔버스 생성
-    const bgCanvas = bgCanvasRef.current;
+    // 포그라운드 오프스크린 캔버스 생성
     const fgCanvas = fgCanvasRef.current;
 
-    if (bgCanvas && fgCanvas) {
-      const bgCtx = bgCanvas.getContext("2d")!;
+    if (fgCanvas) {
       const fgCtx = fgCanvas.getContext("2d")!;
 
-      // 오프 캔버스 생성
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width = bgCanvas.width;
-      offCanvas.height = bgCanvas.height;
-      const offCtx = offCanvas.getContext("2d");
+      // 포그라운드 오프 캔버스 생성
+      const fgOffCanvas = document.createElement("canvas");
+      fgOffCanvas.width = fgCanvas.width;
+      fgOffCanvas.height = fgCanvas.height;
+      const fgOffCtx = fgOffCanvas.getContext("2d");
 
-      // 기존 캔버스가 존재할 시
-      if (defaultCanvas) {
-        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height); // 캔버스를 완전히 초기화
-        bgCtx.drawImage(defaultCanvas, 0, 0);
+      // 이전 포그라운드 캔버스가 존재할 시
+      if (prevFgCanvas) {
+        fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height); // 포그라운드 캔버스를 초기화
+        fgCtx.drawImage(prevFgCanvas, 0, 0); // 이전 포그라운드 캔버스를 다시 그림
       }
 
-      // 기존 캔버스 세팅
-      if (offCtx) {
-        // 오프 캔버스에 현재 캔버스 저장
-        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); // 오프스크린 캔버스 초기화
-        offCtx.drawImage(bgCanvas, 0, 0);
-        setDefaultCanvas(offCanvas);
+      // 포그라운드 오프 캔버스에 현재 캔버스 저장 후, preFgCanvas 에 저장
+      if (fgOffCtx) {
+        fgOffCtx.clearRect(0, 0, fgOffCanvas.width, fgOffCanvas.height); // 오프스크린 캔버스 초기화
+        fgOffCtx.drawImage(fgCanvas, 0, 0);
+        setPrevFgCanvas(fgOffCanvas); // 이전 포그라운드 캔버스 저장
       }
 
       move(initialAnimalY, initialAnimalX);
@@ -381,7 +379,7 @@ export const GhostLeg: FC = () => {
    * 다시하기 버튼 클릭 시, 사다리 다시 그림
    */
   const reDrawGhostReg = () => {
-    setDefaultCanvas(null); // 캔버스 초기화
+    setPrevFgCanvas(null); // 캔버스 초기화
     setTargetAnimal(null); // 타겟 초기화
 
     drawAnimalImg(drawGhostLegLine);
@@ -397,13 +395,13 @@ export const GhostLeg: FC = () => {
     newAnimalX: number
   ) => {
     if (isStart) {
-      const canvas = bgCanvasRef.current;
+      const fgCanvas = fgCanvasRef.current;
 
-      if (canvas) {
-        const ctx = canvas.getContext("2d")!;
+      if (fgCanvas) {
+        const fgCtx = fgCanvas.getContext("2d")!;
         // 선 스타일 설정
-        ctx.strokeStyle = "yellow"; // 선 색상
-        ctx.lineWidth = 5; // 선 두께
+        fgCtx.strokeStyle = "yellow"; // 선 색상
+        fgCtx.lineWidth = 5; // 선 두께
 
         const defaultStartY = 40; // 기본 사다리 시작 y 좌표
 
@@ -426,12 +424,12 @@ export const GhostLeg: FC = () => {
             const speed = 10; // 속도를 조정하려면 이 값을 변경
 
             const animate = () => {
-              ctx.beginPath(); // 경로 시작
-              ctx.moveTo(startX, startY); // 시작점 좌표 (x, y)
-              ctx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
+              fgCtx.beginPath(); // 경로 시작
+              fgCtx.moveTo(startX, startY); // 시작점 좌표 (x, y)
+              fgCtx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
 
-              ctx.stroke(); // 선 그리기
-              ctx.closePath(); // 경로 닫기
+              fgCtx.stroke(); // 선 그리기
+              fgCtx.closePath(); // 경로 닫기
 
               if (currentX !== endX) {
                 if (currentX < endX) {
@@ -453,12 +451,12 @@ export const GhostLeg: FC = () => {
             const speed = 5; // 속도를 조정하려면 이 값을 변경
 
             const animate = () => {
-              ctx.beginPath(); // 경로 시작
-              ctx.moveTo(endX, startY - 3); // 시작점 좌표 (x, y)
-              ctx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
+              fgCtx.beginPath(); // 경로 시작
+              fgCtx.moveTo(endX, startY - 3); // 시작점 좌표 (x, y)
+              fgCtx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
 
-              ctx.stroke(); // 선 그리기
-              ctx.closePath(); // 경로 닫기
+              fgCtx.stroke(); // 선 그리기
+              fgCtx.closePath(); // 경로 닫기
 
               if (currentY !== endY) {
                 if (currentY < endY) {
@@ -471,6 +469,7 @@ export const GhostLeg: FC = () => {
                 resolve(true); // 종 이동 완료 시 Promise 해결
               }
             };
+
             animate();
           });
         };
