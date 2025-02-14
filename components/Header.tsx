@@ -297,7 +297,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_blog.all&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_blog.all&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
@@ -307,7 +307,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_cafe.all&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_cafe.all&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
@@ -317,7 +317,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_image.all&amp;where=m_image&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_image.all&where=m_image&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
@@ -327,7 +327,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_kin.all&amp;where=m_kin&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_kin.all&where=m_kin&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
@@ -337,7 +337,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_influencer.chl&amp;where=m_influencer&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_influencer.chl&where=m_influencer&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
@@ -347,7 +347,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_clip.all&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_clip.all&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
@@ -357,7 +357,7 @@ export const Header = () => {
             <div className="flick_bx" role="presentation">
               <a
                 role="tab"
-                href="?ssc=tab.m_video.all&amp;where=m_video&amp;sm=mtb_jum&amp;query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
+                href="https://m.search.naver.com/search.naver?ssc=tab.m_video.all&where=m_video&sm=mtb_jum&query=%EC%82%AC%EB%8B%A4%EB%A6%AC%ED%83%80%EA%B8%B0%EA%B2%8C%EC%9E%84"
                 className="tab"
                 aria-selected="false"
               >
