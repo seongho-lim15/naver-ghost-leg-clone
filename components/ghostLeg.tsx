@@ -170,9 +170,131 @@ export const GhostLeg: FC = () => {
   };
 
   /**
-   * 사다리 타기 기본선 그리기
+   * 랜덤으로 사다리 배열 만들기
+   */
+  const makeRandomGhostLeg = () => {
+    const ghostLegArr: number[][] = []; // 사다리 배열
+    const firstAndLastEl = Array.from({ length: userNum - 1 }, () => 0); // 사다리의 배열의 처음과 마지막 행
+
+    // 처음과 마지막 행 세팅
+    ghostLegArr.push(firstAndLastEl);
+    ghostLegArr.push(firstAndLastEl);
+
+    // 각 배열 어느 인덱스에 1 이 들어갈껀지 세팅, 총 7개 행
+    Array.from({ length: 7 }).forEach(() => {
+      // 최대로 들어갈 수 있는 1의 갯수.
+      // 예) 유저수 6, ceil = (6-1)/2 = 3
+      const ceil = Math.ceil((userNum - 1) / 2);
+      // 현재 들어가 있는 1의 개수
+      let count = 0;
+      // 랜덤으로 정해진 최대 1의 갯수
+      let limitCnt;
+
+      if (userNum == 2) {
+        limitCnt = Math.round(Math.random() * ceil);
+      } else {
+        limitCnt = Math.ceil(Math.random() * ceil); // 사다리가 1개는 존재할 수 있도록 올림 설정
+      }
+
+      // (유저수 - 1) 의 길이를 가진 배열 생성. 예) [0, 0, 0, 0, 0]
+      const currentArr = Array.from({ length: userNum - 1 }, () => 0);
+      // 인덱스 리스트 설정. 예) [0, 1, 2, 3, 4]
+      const positions = Array.from({ length: userNum - 1 }, () => 0).map(
+        (_, idx) => {
+          return idx;
+        }
+      );
+
+      // 인덱스를 무작위로 섞음. 예) positions = [1, 4, 0, 2, 3]
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [positions[i], positions[j]] = [positions[j], positions[i]];
+      }
+
+      for (const pos of positions) {
+        // 현재 위치의 값이 1이면 스킵
+        if (currentArr[pos] === 1) continue;
+
+        // 1을 배치할 수 있는 조건 확인
+        const isFirstOrNextZero = pos === 0 && currentArr[pos + 1] === 0;
+        const isLastOrPrevZero =
+          pos === userNum - 2 && currentArr[pos - 1] === 0;
+        const isSurroundedByZero =
+          currentArr[pos - 1] === 0 && currentArr[pos + 1] === 0;
+
+        if (
+          (isFirstOrNextZero || isLastOrPrevZero || isSurroundedByZero) &&
+          count < limitCnt
+        ) {
+          currentArr[pos] = 1;
+          count++;
+        }
+
+        // 필요한 1의 개수를 초과하면 루프 종료
+        if (count >= limitCnt) break;
+      }
+
+      ghostLegArr.splice(1, 0, currentArr);
+    });
+    return ghostLegArr;
+  };
+
+  /**
+   * 사다리 배열에 맞춰 사다리 기본선 그리기
    */
   const drawGhostLegLine = () => {
+    const drawBaseGhostLeg = async (
+      userIdx: number,
+      ghostLegArray: number[][]
+    ) => {
+      const bgCanvas = bgCanvasRef.current;
+
+      if (bgCanvas) {
+        const bgCtx = bgCanvas.getContext("2d")!;
+        // 선 스타일 설정
+        bgCtx.strokeStyle = "lightgrey"; // 선 색상
+        bgCtx.lineWidth = 5; // 선 두께
+
+        const startX = 25 + userIdx * 50; // 사다리 시작 x 좌표
+        const defaultStartY = 40; // 기본 사다리 시작 y 좌표
+        const lineGap = 28; // 수평 사다리 사이 높이
+
+        /* 수직선 그리기 */
+        bgCtx.beginPath(); // 경로 시작
+        bgCtx.moveTo(startX, 50); // 시작점 좌표 (x, y)
+        bgCtx.lineTo(startX, 260); // 끝점 좌표 (x, y)
+        bgCtx.stroke(); // 선 그리기
+        bgCtx.closePath(); // 경로 닫기
+
+        /* 사다리 수평선 그리기 */
+        for (
+          let ghostLegIdx = 0;
+          ghostLegIdx < ghostLegArray.length - 1;
+          ghostLegIdx++
+        ) {
+          // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
+          if (ghostLegArray[ghostLegIdx][userIdx] == 1) {
+            bgCtx.beginPath(); // 경로 시작
+            bgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
+            bgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
+            bgCtx.stroke(); // 선 그리기
+            bgCtx.closePath(); // 경로 닫기
+          }
+        }
+
+        // ghostLegArray.map((position, ghostLegIdx) => {
+        //   // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
+        //   if (position[userIdx] == 1 && position[userIdx + 1] == 1) {
+        //     bgCtx.beginPath(); // 경로 시작
+        //     bgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
+        //     bgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
+        //     bgCtx.stroke(); // 선 그리기
+        //     bgCtx.closePath(); // 경로 닫기
+        //   }
+        // });
+      }
+    };
+
     const canvas = fgCanvasRef.current;
 
     if (canvas) {
@@ -182,125 +304,7 @@ export const GhostLeg: FC = () => {
       // 사다리 그리기
       new Array(userNum)
         .fill(1)
-        .map((_, userIdx) => drawLine(userIdx, ghostLegArray));
-    }
-  };
-
-  /**
-   * 랜덤으로 사다리 배열 만들기
-   */
-  const makeRandomGhostLeg = () => {
-    const ghostLegArr: number[][] = [];
-    const firstAndLastEl = Array.from({ length: userNum }, () => 0); // 사다리의 배열의 처음과 마지막 행
-
-    ghostLegArr.push(firstAndLastEl);
-    ghostLegArr.push(firstAndLastEl);
-
-    // 배열 요소 어디에 1 이 들어갈껀지 세팅, 총 7개 행
-    Array.from({ length: 7 }).forEach(() => {
-      let count = 0; // 1의 개수
-
-      const maxCntByUserNum = [0, 2, 2, 2, 4, 4, 4, 6, 6, 6, 8, 8];
-      const limitCnt = maxCntByUserNum[userNum - 1]; // 최대 1의 갯수
-
-      const arr = Array.from({ length: userNum }, () => 0); // 유저수 길이를 가진 배열 생성. 예) userNum == 5, arr == [0, 0, 0, 0, 0]
-      const positions = Array.from({ length: userNum - 1 }, (_, i) => i); // 인덱스 리스트 생성. 예) positions = [0, 1, 2, 3]
-
-      // 인덱스를 무작위로 섞음
-      for (let i = positions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1)); // 0 <= x < 5, j 는 0,1,2,3,4 사이의 정수값
-        [positions[i], positions[j]] = [positions[j], positions[i]];
-        // 위 코드를 실행하면 i=4, j=2 라고 했을 때, position[4] = position[2] 가 되고, position[2] = position[4] 가 된다.
-        // 이렇게 무작위로 섞인 인덱스 배열이 생성됨
-      }
-
-      // positions = [1,2,3,0] 라고 가정, index = 4 가 없는 이유는 마지막일 때는 1을 2개를 못 넣으니깐
-      // arr = [0, 0, 0, 0, 0], userNum = 5
-      for (const posIdx of positions) {
-        // 현재 위치가 0 일때
-        if (
-          posIdx == 0 &&
-          arr[posIdx] == 0 &&
-          arr[posIdx + 1] == 0 &&
-          arr[posIdx + 2] == 0
-        ) {
-          arr[posIdx] = 1;
-          arr[posIdx + 1] = 1;
-          count++;
-          count++;
-        }
-        // 현재 위치가 userNum - 2 일때,
-        else if (
-          posIdx == userNum - 2 &&
-          arr[posIdx] == 0 &&
-          arr[posIdx + 1] == 0 &&
-          arr[posIdx - 1] == 0
-        ) {
-          arr[posIdx] = 1;
-          arr[posIdx + 1] = 1;
-          count++;
-          count++;
-        }
-        // 현재 위치 값이 0 이고, 그 다음 위치 값이 0 이고, 그 전과 그 다다음의 위치 값이 0일 경우
-        else if (
-          arr[posIdx] == 0 &&
-          arr[posIdx + 1] == 0 &&
-          arr[posIdx + 2] == 0 &&
-          arr[posIdx - 1] == 0
-        ) {
-          arr[posIdx] = 1;
-          arr[posIdx + 1] = 1;
-          count++;
-          count++;
-        }
-
-        // 1의 개수를 제한
-        if (count >= limitCnt) {
-          break;
-        }
-      }
-
-      ghostLegArr.splice(1, 0, arr);
-    });
-
-    return ghostLegArr;
-  };
-
-  /**
-   * 사다리 배열에 맞춰 사다리 기본선 그리기
-   * @param userIdx
-   */
-  const drawLine = async (userIdx: number, ghostLegArray: number[][]) => {
-    const bgCanvas = bgCanvasRef.current;
-
-    if (bgCanvas) {
-      const bgCtx = bgCanvas.getContext("2d")!;
-      // 선 스타일 설정
-      bgCtx.strokeStyle = "lightgrey"; // 선 색상
-      bgCtx.lineWidth = 5; // 선 두께
-
-      const startX = 25 + userIdx * 50; // 사다리 시작 x 좌표
-      const defaultStartY = 40; // 기본 사다리 시작 y 좌표
-      const lineGap = 28; // 수평 사다리 사이 높이
-
-      /* 수직선 그리기 */
-      bgCtx.beginPath(); // 경로 시작
-      bgCtx.moveTo(startX, 50); // 시작점 좌표 (x, y)
-      bgCtx.lineTo(startX, 260); // 끝점 좌표 (x, y)
-      bgCtx.stroke(); // 선 그리기
-      bgCtx.closePath(); // 경로 닫기
-
-      /* 사다리 수평선 그리기 */
-      ghostLegArray.map((position, ghostLegIdx) => {
-        // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
-        if (position[userIdx] == 1 && position[userIdx + 1] == 1) {
-          bgCtx.beginPath(); // 경로 시작
-          bgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
-          bgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
-          bgCtx.stroke(); // 선 그리기
-          bgCtx.closePath(); // 경로 닫기
-        }
-      });
+        .map((_, userIdx) => drawBaseGhostLeg(userIdx, ghostLegArray));
     }
   };
 
@@ -338,7 +342,13 @@ export const GhostLeg: FC = () => {
       }
 
       // 기존 좌표에서 이동할 좌표로 사다리를 타고 이동하는 동물 그리기
-      await drawMovingAnimalLine(animalY, animalX, newAnimalY, newAnimalX);
+      await drawMovingAnimalLine(
+        animalY,
+        animalX,
+        newAnimalY,
+        newAnimalX,
+        initialAnimalX
+      );
 
       // 마지막 행일 때까지 재귀호출
       if (newAnimalY !== 8) {
@@ -346,7 +356,6 @@ export const GhostLeg: FC = () => {
       }
     };
 
-    // 포그라운드 오프스크린 캔버스 생성
     const fgCanvas = fgCanvasRef.current;
 
     if (fgCanvas) {
@@ -392,7 +401,8 @@ export const GhostLeg: FC = () => {
     animalY: number,
     animalX: number,
     newAnimalY: number,
-    newAnimalX: number
+    newAnimalX: number,
+    initialAnimalX: number
   ) => {
     if (isStart) {
       const fgCanvas = fgCanvasRef.current;
@@ -424,10 +434,27 @@ export const GhostLeg: FC = () => {
             const speed = 10; // 속도를 조정하려면 이 값을 변경
 
             const animate = () => {
+              // 이미지 그리기
+              const imgWidth = 50; // 이미지 너비
+              const imgHeight = 50; // 이미지 높이
+              const imgX = currentX - imgWidth / 2; // 이미지의 중심이 선 끝에 오도록 조정
+              const imgY = startY - imgHeight / 2; // 이미지의 중심이 선 끝에 오도록 조정
+
+              fgCtx.drawImage(
+                image, // 이미지
+                initialAnimalX * 50, // 이미지 크롭 시작 x 좌표
+                50, // 이미지 크롭 시작 y 좌표
+                50, // 이미지 크롭 너비
+                50, // 이미지 크롭 높이
+                imgX, // 이미지를 그릴 canvas 의 x 좌표
+                imgY, // 이미지를 그릴 canvas 의 y 좌표
+                imgWidth, // 이미지 너비
+                imgHeight // 이미지 높이
+              );
+
               fgCtx.beginPath(); // 경로 시작
               fgCtx.moveTo(startX, startY); // 시작점 좌표 (x, y)
               fgCtx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
-
               fgCtx.stroke(); // 선 그리기
               fgCtx.closePath(); // 경로 닫기
 
@@ -442,7 +469,13 @@ export const GhostLeg: FC = () => {
                 resolve(true); // 횡 이동 완료 시 Promise 해결
               }
             };
-            animate();
+
+            const image = new Image();
+            image.src = "/images/sprite_junis_small_v4.png"; // 이미지 경로
+            image.onload = () => {
+              // 이미지가 로드된 후 애니메이션 시작
+              animate();
+            };
           });
         };
 
