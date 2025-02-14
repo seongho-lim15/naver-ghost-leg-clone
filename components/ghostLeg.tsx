@@ -238,9 +238,44 @@ export const GhostLeg: FC = () => {
       currentArr.push(0);
       ghostLegArr.splice(1, 0, currentArr);
     });
-
     console.log("ghostLegArr : ", ghostLegArr);
     return ghostLegArr;
+  };
+
+  const validateGhostLeg = (currentGhostLeg: number[][]) => {
+    let result = true;
+
+    const moveTarget = (y: number, x: number) => {
+      let newY = 0;
+      let newX = 0;
+
+      if (currentGhostLeg[y][x] === 1) {
+        newY = y++;
+        newX = x++;
+      } else if (currentGhostLeg[y][x - 1] === 1) {
+        newY = y++;
+        newX = x--;
+      } else if (currentGhostLeg[y][x] === 0) {
+        newY = y++;
+      }
+
+      if (newY !== 8) {
+        return moveTarget(newY, newX);
+      } else {
+        return [newY, newX];
+      }
+    };
+
+    if (targetAnimal !== null) {
+      const resultYX = moveTarget(0, targetAnimal);
+
+      if (resultYX[1] === 1) {
+        console.log("false");
+        result = false;
+      }
+    }
+
+    return result;
   };
 
   /**
@@ -285,24 +320,21 @@ export const GhostLeg: FC = () => {
             bgCtx.closePath(); // 경로 닫기
           }
         }
-
-        // ghostLegArray.map((position, ghostLegIdx) => {
-        //   // 현재 user Index 에서 이어져 있는 수평선이 있을 경우
-        //   if (position[userIdx] == 1 && position[userIdx + 1] == 1) {
-        //     bgCtx.beginPath(); // 경로 시작
-        //     bgCtx.moveTo(startX, defaultStartY + ghostLegIdx * lineGap); // 시작점 좌표 (x, y)
-        //     bgCtx.lineTo(startX + 50, defaultStartY + ghostLegIdx * lineGap); // 끝점 좌표 (x, y)
-        //     bgCtx.stroke(); // 선 그리기
-        //     bgCtx.closePath(); // 경로 닫기
-        //   }
-        // });
       }
     };
 
     const canvas = fgCanvasRef.current;
 
     if (canvas) {
-      const ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+      let ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
+
+      // 타겟이 존재 시, 유효하지 않은 배열일 때 사다리 배열 재생성
+      if (targetAnimal) {
+        while (!validateGhostLeg(ghostLegArray)) {
+          ghostLegArray = makeRandomGhostLeg();
+        }
+      }
+
       setGhostLeg(ghostLegArray); // 사다리 상태 저장
 
       // 사다리 그리기
@@ -390,7 +422,7 @@ export const GhostLeg: FC = () => {
    */
   const reDrawGhostReg = () => {
     setPrevFgCanvas(null); // 캔버스 초기화
-    setTargetAnimal(null); // 타겟 초기화
+    // setTargetAnimal(null); // 타겟 초기화
 
     drawAnimalImg(drawGhostLegLine);
   };
@@ -599,6 +631,7 @@ export const GhostLeg: FC = () => {
                         display: "inline",
                       }}
                     >
+                      targetAnimal : {targetAnimal}
                       {isStart ? (
                         <p>동물을 클릭하여 결과를 확인하세요.</p>
                       ) : (
