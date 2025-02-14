@@ -174,7 +174,7 @@ export const GhostLeg: FC = () => {
    */
   const makeRandomGhostLeg = () => {
     const ghostLegArr: number[][] = []; // 사다리 배열
-    const firstAndLastEl = Array.from({ length: userNum - 1 }, () => 0); // 사다리의 배열의 처음과 마지막 행
+    const firstAndLastEl = Array.from({ length: userNum }, () => 0); // 사다리의 배열의 처음과 마지막 행
 
     // 처음과 마지막 행 세팅
     ghostLegArr.push(firstAndLastEl);
@@ -198,6 +198,7 @@ export const GhostLeg: FC = () => {
 
       // (유저수 - 1) 의 길이를 가진 배열 생성. 예) [0, 0, 0, 0, 0]
       const currentArr = Array.from({ length: userNum - 1 }, () => 0);
+
       // 인덱스 리스트 설정. 예) [0, 1, 2, 3, 4]
       const positions = Array.from({ length: userNum - 1 }, () => 0).map(
         (_, idx) => {
@@ -234,8 +235,11 @@ export const GhostLeg: FC = () => {
         if (count >= limitCnt) break;
       }
 
+      currentArr.push(0);
       ghostLegArr.splice(1, 0, currentArr);
     });
+
+    console.log("ghostLegArr : ", ghostLegArr);
     return ghostLegArr;
   };
 
@@ -323,22 +327,19 @@ export const GhostLeg: FC = () => {
       let newAnimalX = animalX;
       let newAnimalY = animalY;
 
-      // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
-      if (ghostLeg[animalY][animalX] === 0) {
+      // 현재 좌표의 값이 1이고, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
+      if (ghostLeg[animalY][animalX] === 1) {
+        newAnimalX++;
         newAnimalY++;
       }
-      // 현재 좌표의 값이 1이고
-      else if (ghostLeg[animalY][animalX] === 1) {
-        // 다음 x 좌표값이 1인경우, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
-        if (ghostLeg[animalY][animalX + 1] === 1) {
-          newAnimalX++;
-          newAnimalY++;
-        }
-        // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
-        else if (ghostLeg[animalY][animalX - 1] === 1) {
-          newAnimalX--;
-          newAnimalY++;
-        }
+      // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
+      else if (ghostLeg[animalY][animalX - 1] === 1) {
+        newAnimalX--;
+        newAnimalY++;
+      }
+      // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
+      else if (ghostLeg[animalY][animalX] === 0) {
+        newAnimalY++;
       }
 
       // 기존 좌표에서 이동할 좌표로 사다리를 타고 이동하는 동물 그리기
