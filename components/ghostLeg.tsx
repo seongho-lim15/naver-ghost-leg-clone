@@ -618,7 +618,11 @@ export const GhostLeg: FC = () => {
                         더하기
                       </button>{" "}
                     </span>{" "}
-                    <p className="ifm">(최소2명~최대12명)</p>
+                    <p className="ifm">
+                      {targetAnimal
+                        ? "(최소2명~최대12명)."
+                        : "(최소2명~최대12명)"}
+                    </p>
                   </div>
                   <div
                     className="canvas_area"
