@@ -238,7 +238,8 @@ export const GhostLeg: FC = () => {
       if (userNum == 2) {
         limitCnt = Math.round(Math.random() * ceil);
       } else {
-        limitCnt = Math.ceil(Math.random() * ceil); // 사다리가 1개는 존재할 수 있도록 올림 설정
+        limitCnt = ceil;
+        // limitCnt = Math.ceil(Math.random() * ceil); // 사다리가 1개는 존재할 수 있도록 올림 설정
       }
 
       // (유저수 - 1) 의 길이를 가진 배열 생성. 예) [0, 0, 0, 0, 0]
