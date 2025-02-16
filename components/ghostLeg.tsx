@@ -46,9 +46,15 @@ export const GhostLeg: FC = () => {
     setTargetAnimal(null); // 타겟 초기화
     setIsStart(false); // 시작 초기화
     setPrevFgCanvas(null); // 이전 포그라운드 캔버스 초기화
-
-    drawBaseImages(); // 동물, 번호 그리기
+    // 유저 수와 동일한 동물 데이터 세팅
+    setAnimals(() =>
+      Array.from({ length: userNum }, (_, idx) => ({ y: 0, x: idx }))
+    );
   }, [userNum]);
+
+  useEffect(() => {
+    drawBaseImages(); // 동물, 동물 그림자, 번호 그리기
+  }, [animals]);
 
   /**
    * 사다리 게임 시작. 사다리 그리기
@@ -94,20 +100,20 @@ export const GhostLeg: FC = () => {
     if (bgCanvas) {
       const bgCtx = bgCanvas.getContext("2d")!;
 
-      // 캔버스 위에 그림을 그리고 나서 새로고침되기 전에 깜빡거림을 줄이기 위해 사용
-      // 오프스크린 캔버스에 먼저 그린 후 원본 캔버스에 옮겨준다.
+      /*
+        캔버스 위에 그림을 그리고 나서 새로고침되기 전에 깜빡거림을 줄이기 위해 오프스크린 캔버스 사용.
+        오프스크린 캔버스에 먼저 그린 후 원본 캔버스에 옮겨준다.
+      */
       const bgOffCanvas = document.createElement("canvas"); // 백그라운드 오프스크린 캔버스 생성
       bgOffCanvas.width = bgCanvas.width;
       bgOffCanvas.height = bgCanvas.height;
       const bgOffCtx = bgOffCanvas.getContext("2d");
 
-      const animalAndNumberIcons = basicImages;
+      const animalAndNumberIcons = basicImages; // 이미지 데이터 가져오기
       if (bgOffCtx && animalAndNumberIcons) {
         bgOffCtx.clearRect(0, 0, bgOffCanvas.width, bgOffCanvas.height); // 백그라운드 오프스크린 캔버스 초기화
-
         // 고해상도를 위해 캔버스 크기 조정
         // const dpr = window.devicePixelRatio || 1; // 디바이스 픽셀 비율 확인
-
         // 캔버스의 실제 해상도를 높이기
         bgCanvas.width = 600;
         bgCanvas.height = 308;
@@ -171,37 +177,37 @@ export const GhostLeg: FC = () => {
       fgCanvas.width = 600;
       fgCanvas.height = 308;
 
-      const cropX = 0; // 이미지 크롭 시작 x 좌표
-      const cropY = 0; // 이미지 크롭 시작 y 좌표
-      const cropWidth = 50 * userNum; // 이미지 크롭 너비
-      const cropHeight = 50; // 이미지 크롭 높이
-      const canvasX = 0; // 이미지를 그릴 canvas 의 x 좌표
-      const canvasY = 0; // 이미지를 그릴 canvas 의 y 좌표
-      const destWidth = 50 * userNum;
-      const destHeight = 50;
+      const cropX = 50; // 원본 이미지 크롭 시작 x 좌표
+      const cropY = 50; // 원본 이미지 크롭 시작 y 좌표
+      const cropWidth = 50; // 원본 이미지 크롭 너비
+      const cropHeight = 50; // 원본 이미지 크롭 높이
+      const canvasX = 50; // 크롭한 이미지를 그릴 캔버스의 x 좌표
+      const canvasY = 0; // 크롭한 이미지를 그릴 캔버스의 y 좌표
+      const destWidth = 50; // 캔버스에서 출력할 너비 (원본 비율 유지 가능)
+      const destHeight = 50; // 캔버스에서 출력할 높이 (원본 비율 유지 가능)
 
       if (fgOffCtx) {
         const animalAndNumberIcons = basicImages;
         fgOffCtx.clearRect(0, 0, fgOffCanvas.width, fgOffCanvas.height); // 포그라운드 오프스크린 캔버스 초기화
 
         if (animalAndNumberIcons) {
-          console.log("animalAndNumberIcons : ", animalAndNumberIcons);
-
           // 포그라운드에 동물 아이콘 그리기
-          fgOffCtx.drawImage(
-            animalAndNumberIcons,
-            cropX,
-            cropY + 50,
-            cropWidth,
-            cropHeight,
-            canvasX,
-            canvasY,
-            destWidth,
-            destHeight
-          );
+          animals.forEach((animal) => {
+            fgOffCtx.drawImage(
+              animalAndNumberIcons,
+              cropX * animal.x,
+              cropY,
+              cropWidth,
+              cropHeight,
+              canvasX * animal.x,
+              canvasY,
+              destWidth,
+              destHeight
+            );
+          });
 
           // 포그라운드 캔버스 초기화 후, 포그라운드 오프캔버스를 포그라운드 캔버스에 옮김
-          fgCtx.clearRect(0, 0, 10000, fgCanvas.height);
+          fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
           fgCtx.drawImage(fgOffCanvas, 0, 0);
         }
       }
