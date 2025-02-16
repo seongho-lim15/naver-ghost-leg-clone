@@ -636,7 +636,6 @@ export const GhostLeg: FC = () => {
                         display: "inline",
                       }}
                     >
-                      targetAnimal : {targetAnimal}
                       {isStart ? (
                         <p>동물을 클릭하여 결과를 확인하세요.</p>
                       ) : (
