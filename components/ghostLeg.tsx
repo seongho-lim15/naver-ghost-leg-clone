@@ -518,17 +518,17 @@ export const GhostLeg: FC = () => {
               const imgX = currentX - imgWidth / 2; // 이미지의 중심이 선 끝에 오도록 조정
               const imgY = startY - imgHeight / 2; // 이미지의 중심이 선 끝에 오도록 조정
 
-              fgCtx.drawImage(
-                image, // 이미지
-                initialAnimalX * 50, // 이미지 크롭 시작 x 좌표
-                50, // 이미지 크롭 시작 y 좌표
-                50, // 이미지 크롭 너비
-                50, // 이미지 크롭 높이
-                imgX, // 이미지를 그릴 canvas 의 x 좌표
-                imgY, // 이미지를 그릴 canvas 의 y 좌표
-                imgWidth, // 이미지 너비
-                imgHeight // 이미지 높이
-              );
+              // fgCtx.drawImage(
+              //   image, // 이미지
+              //   initialAnimalX * 50, // 이미지 크롭 시작 x 좌표
+              //   50, // 이미지 크롭 시작 y 좌표
+              //   50, // 이미지 크롭 너비
+              //   50, // 이미지 크롭 높이
+              //   imgX, // 이미지를 그릴 canvas 의 x 좌표
+              //   imgY, // 이미지를 그릴 canvas 의 y 좌표
+              //   imgWidth, // 이미지 너비
+              //   imgHeight // 이미지 높이
+              // );
 
               fgCtx.beginPath(); // 경로 시작
               fgCtx.moveTo(startX, startY); // 시작점 좌표 (x, y)
