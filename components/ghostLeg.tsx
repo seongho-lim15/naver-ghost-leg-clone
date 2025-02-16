@@ -238,25 +238,26 @@ export const GhostLeg: FC = () => {
       currentArr.push(0);
       ghostLegArr.splice(1, 0, currentArr);
     });
-    console.log("ghostLegArr : ", ghostLegArr);
     return ghostLegArr;
   };
 
   const validateGhostLeg = (currentGhostLeg: number[][]) => {
     let result = true;
 
+    // 타겟을 이동
     const moveTarget = (y: number, x: number) => {
       let newY = 0;
       let newX = 0;
 
       if (currentGhostLeg[y][x] === 1) {
-        newY = y++;
-        newX = x++;
+        newY = y+1;
+        newX = x+1;
       } else if (currentGhostLeg[y][x - 1] === 1) {
-        newY = y++;
-        newX = x--;
+        newY = y+1;
+        newX = x-1;
       } else if (currentGhostLeg[y][x] === 0) {
-        newY = y++;
+        newY = y+1;
+        newX = x;
       }
 
       if (newY !== 8) {
@@ -267,10 +268,10 @@ export const GhostLeg: FC = () => {
     };
 
     if (targetAnimal !== null) {
-      const resultYX = moveTarget(0, targetAnimal);
+      const resultYX = moveTarget(0, targetAnimal); // 타겟이 도착한 [y,x] 좌표
 
-      if (resultYX[1] === 1) {
-        console.log("false");
+      // 타겟의 x 좌표가 1 이 아닐 경우, 유효하지 않다고 판단 false 세팅
+      if (resultYX[1] !== 1) {
         result = false;
       }
     }
@@ -328,7 +329,7 @@ export const GhostLeg: FC = () => {
     if (canvas) {
       let ghostLegArray = makeRandomGhostLeg(); // 랜덤 사다리 배열 만들기
 
-      // 타겟이 존재 시, 유효하지 않은 배열일 때 사다리 배열 재생성
+      // 타겟이 존재 시, 유효하지 않은 배열이면 유효한 배열이 될 때까지 사다리 배열 재생성
       if (targetAnimal) {
         while (!validateGhostLeg(ghostLegArray)) {
           ghostLegArray = makeRandomGhostLeg();
