@@ -187,7 +187,6 @@ export const GhostLeg: FC = () => {
 
       if (fgOffCtx) {
         const animalAndNumberIcons = basicImages;
-        fgOffCtx.clearRect(0, 0, fgOffCanvas.width, fgOffCanvas.height); // 포그라운드 오프스크린 캔버스 초기화
 
         if (animalAndNumberIcons) {
           // 포그라운드에 동물 아이콘 그리기
@@ -206,7 +205,7 @@ export const GhostLeg: FC = () => {
           });
 
           // 포그라운드 캔버스 초기화 후, 포그라운드 오프캔버스를 포그라운드 캔버스에 옮김
-          fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+          // fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
           fgCtx.drawImage(fgOffCanvas, 0, 0);
         }
       }
@@ -531,6 +530,9 @@ export const GhostLeg: FC = () => {
             //   imgHeight // 이미지 높이
             // );
 
+            // animals.current[initialAnimalX].x = currentX;
+            // drawAnimals();
+
             fgCtx.beginPath(); // 경로 시작
             fgCtx.moveTo(startX, startY); // 시작점 좌표 (x, y)
             fgCtx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
@@ -576,22 +578,24 @@ export const GhostLeg: FC = () => {
           const speed = 5; // 속도를 조정하려면 이 값을 변경
 
           const animate = () => {
-            fgCtx.beginPath(); // 경로 시작
-            fgCtx.moveTo(endX, startY - 3); // 시작점 좌표 (x, y)
-            fgCtx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
-
-            fgCtx.stroke(); // 선 그리기
-            fgCtx.closePath(); // 경로 닫기
-
             if (currentY !== endY) {
+              fgCtx.beginPath(); // 경로 시작
+              fgCtx.moveTo(endX, currentY - 3); // 이전 프레임의 위치
+
+              // 다음 위치로 선을 그림
               if (currentY < endY) {
-                currentY += Math.min(speed, endY - currentY); // 아래로 확장
+                currentY += Math.min(speed, endY - currentY);
               } else {
-                currentY -= Math.min(speed, currentY - endY); // 위로 축소
+                currentY -= Math.min(speed, currentY - endY);
               }
+
+              fgCtx.lineTo(endX, currentY); // 현재 프레임 위치로 선을 그림
+              fgCtx.stroke(); // 선 그리기
+              fgCtx.closePath(); // 경로 닫기
+
               requestAnimationFrame(animate); // 다음 프레임 요청
             } else {
-              resolve(true); // 종 이동 완료 시 Promise 해결
+              resolve(true); // 애니메이션 종료
             }
           };
 
