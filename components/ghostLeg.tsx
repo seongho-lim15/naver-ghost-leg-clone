@@ -562,10 +562,10 @@ export const GhostLeg: FC = () => {
     /**
      * 수직이동
      * @param startY - 동물이 움직이기 시작할 때의 Canvas Y 좌표
-     * @param startX - 동물이 움직이기 시작할 때의 Canvas X 좌표
      * @param endY - 동물이 도착할 Canvas Y 좌표
+     * @param endX - 동물이 도착할 Canvas X 좌표
      */
-    const drawLineY = (startX: number, startY: number, endY: number) => {
+    const drawLineY = (startY: number, endY: number, endX: number) => {
       const fgCanvas = fgCanvasRef.current;
 
       if (fgCanvas) {
@@ -577,8 +577,8 @@ export const GhostLeg: FC = () => {
 
           const animate = () => {
             fgCtx.beginPath(); // 경로 시작
-            fgCtx.moveTo(startX, startY - 3); // 시작점 좌표 (x, y)
-            fgCtx.lineTo(startX, currentY); // 끝점 좌표 (x, y) 종이동
+            fgCtx.moveTo(endX, startY - 3); // 시작점 좌표 (x, y)
+            fgCtx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
 
             fgCtx.stroke(); // 선 그리기
             fgCtx.closePath(); // 경로 닫기
@@ -623,8 +623,8 @@ export const GhostLeg: FC = () => {
       const endY = defaultStartY + 28 * movingEndY + 3; //  동물이 도착할 Canvas Y 좌표
       const endX = defaultStartX + movingEndX * 50; // 동물이 도착할 Canvas X 좌표
 
-      await drawLineX(startX, startY, endX); // 시작 X,Y 좌표에서 도착 Canvas X 좌표로 이동
-      await drawLineY(startX, startY, endY); // 시작 X,Y 좌표에서 도착 Canvas Y 좌표로 이동
+      await drawLineX(startX, startY, endX); // 시작 Canvas X 좌표에서 도착 Canvas X 좌표로 이동
+      await drawLineY(startY, endY, endX); // 시작 Canvas Y 좌표에서 도착 Canvas Y 좌표로 이동
     }
   };
 
