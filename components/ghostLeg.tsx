@@ -14,7 +14,8 @@ export const GhostLeg: FC = () => {
   const [isStart, setIsStart] = useState(false);
   const [nagi, setNagi] = useState<{ [key: number]: string }>({});
   const [ghostLeg, setGhostLeg] = useState<number[][]>([]);
-  const [animals, setAnimals] = useState<Animal[]>([]);
+  const animals = useRef<Animal[]>([]);
+
   const [basicImages, setBasicImages] = useState<CanvasImageSource>();
   // 이전 포그라운드 캔버스
   const [prevFgCanvas, setPrevFgCanvas] = useState<HTMLCanvasElement | null>(
@@ -47,14 +48,12 @@ export const GhostLeg: FC = () => {
     setIsStart(false); // 시작 초기화
     setPrevFgCanvas(null); // 이전 포그라운드 캔버스 초기화
     // 유저 수와 동일한 동물 데이터 세팅
-    setAnimals(() =>
-      Array.from({ length: userNum }, (_, idx) => ({ y: 0, x: idx }))
-    );
-  }, [userNum]);
-
-  useEffect(() => {
+    animals.current = Array.from({ length: userNum }, (_, idx) => ({
+      y: 0,
+      x: idx,
+    }));
     drawBaseImages(); // 동물, 동물 그림자, 번호 그리기
-  }, [animals]);
+  }, [userNum]);
 
   /**
    * 사다리 게임 시작. 사다리 그리기
@@ -192,7 +191,7 @@ export const GhostLeg: FC = () => {
 
         if (animalAndNumberIcons) {
           // 포그라운드에 동물 아이콘 그리기
-          animals.forEach((animal) => {
+          animals.current.forEach((animal) => {
             fgOffCtx.drawImage(
               animalAndNumberIcons,
               cropX * animal.x,
@@ -291,20 +290,28 @@ export const GhostLeg: FC = () => {
   const validateGhostLeg = (currentGhostLeg: number[][]) => {
     let result = true;
 
-    // 타겟을 이동
-    const moveTarget = (y: number, x: number) => {
-      let newY = 0;
-      let newX = 0;
+    /**
+     * 타겟이 사다리를 따라 이동
+     * @param currentY - 타겟의 현재 Y 좌표
+     * @param currentX - 타겟의 현재 X 좌표
+     */
+    const moveTarget = (currentY: number, currentX: number) => {
+      let newY = currentY;
+      let newX = currentX;
 
-      if (currentGhostLeg[y][x] === 1) {
-        newY = y + 1;
-        newX = x + 1;
-      } else if (currentGhostLeg[y][x - 1] === 1) {
-        newY = y + 1;
-        newX = x - 1;
-      } else if (currentGhostLeg[y][x] === 0) {
-        newY = y + 1;
-        newX = x;
+      // 현재 좌표의 값이 1이고, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
+      if (currentGhostLeg[currentY][currentX] === 1) {
+        newY++;
+        newX++;
+      }
+      // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
+      else if (currentGhostLeg[currentY][currentX - 1] === 1) {
+        newY++;
+        newX--;
+      }
+      // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
+      else if (currentGhostLeg[currentY][currentX] === 0) {
+        newY++;
       }
 
       if (newY !== 8) {
@@ -317,7 +324,7 @@ export const GhostLeg: FC = () => {
     if (targetAnimal !== null) {
       const resultYX = moveTarget(0, targetAnimal); // 타겟이 도착한 [y,x] 좌표
 
-      // 타겟의 x 좌표가 1 이 아닐 경우, 유효하지 않다고 판단 false 세팅
+      // 타겟의 x 좌표가 1 이 아닐 경우, 유효하지 않다고 판단, result 에 false 세팅
       if (resultYX[1] !== 1) {
         result = false;
       }
@@ -394,38 +401,38 @@ export const GhostLeg: FC = () => {
 
   /**
    * 동물 클릭해 사다리 타기 시작
-   * @param initialAnimalY
-   * @param initialAnimalX
+   * @param {number} initialAnimalY - 동물이 처음 위치한 Y 좌표
+   * @param {number} initialAnimalX - 동물이 처음 위치한 X 좌표
    */
   const clickAnimal = (initialAnimalY: number, initialAnimalX: number) => {
     /**
-     * 재귀를 통해 이동
-     * @param animalY
-     * @param animalX
+     * 재귀를 통해 동물 이동
+     * @param currentAnimalY - 움직이기 전 동물의 Y 좌표
+     * @param currentAnimalX - 움직이기 전 동물의 X 좌표
      */
-    const move = async (animalY: number, animalX: number) => {
-      let newAnimalX = animalX;
-      let newAnimalY = animalY;
+    const move = async (currentAnimalY: number, currentAnimalX: number) => {
+      let newAnimalX = currentAnimalX;
+      let newAnimalY = currentAnimalY;
 
       // 현재 좌표의 값이 1이고, 오른쪽으로 한칸 이동 후, 아래로 한칸 이동
-      if (ghostLeg[animalY][animalX] === 1) {
+      if (ghostLeg[currentAnimalY][currentAnimalX] === 1) {
         newAnimalX++;
         newAnimalY++;
       }
       // 이전 x 좌표값이 1인경우, 왼쪽으로 한칸 이동 후, 아래로 한칸 이동
-      else if (ghostLeg[animalY][animalX - 1] === 1) {
+      else if (ghostLeg[currentAnimalY][currentAnimalX - 1] === 1) {
         newAnimalX--;
         newAnimalY++;
       }
       // 현재 좌표의 값이 0 인 경우, 아래로 한칸 이동
-      else if (ghostLeg[animalY][animalX] === 0) {
+      else if (ghostLeg[currentAnimalY][currentAnimalX] === 0) {
         newAnimalY++;
       }
 
       // 기존 좌표에서 이동할 좌표로 사다리를 타고 이동하는 동물 그리기
       await drawMovingLine(
-        animalY,
-        animalX,
+        currentAnimalY,
+        currentAnimalX,
         newAnimalY,
         newAnimalX,
         initialAnimalX
@@ -474,121 +481,150 @@ export const GhostLeg: FC = () => {
   };
 
   /**
-   * 시작점 animalX, animalY 로 시작해서 사다리 타기 라인 그리기
+   * 시작점 movingStartX, movingStartY 로 시작해서,
+   * 종착점 movingEndY, movingEndX 로 움직이는 사다리 라인 그리기
+   * @param movingStartY - 움직이기 전 동물의 Y 좌표
+   * @param movingStartX - 움직이기 전 동물의 X 좌표
+   * @param movingEndY - 동물이 이동할 Y 좌표
+   * @param movingEndX - 동물이 이동할 X 좌표
+   * @param initialAnimalX - 동물의 초기 X 좌표
    */
   const drawMovingLine = async (
-    animalY: number,
-    animalX: number,
-    newAnimalY: number,
-    newAnimalX: number,
+    movingStartY: number,
+    movingStartX: number,
+    movingEndY: number,
+    movingEndX: number,
     initialAnimalX: number
   ) => {
-    if (isStart) {
+    /**
+     * Canvas 수평이동
+     * @param startX - 동물이 움직이기 시작할 때의 Canvas X 좌표
+     * @param startY - 동물이 움직이기 시작할 때의 Canvas Y 좌표
+     * @param endX - 동물이 도착할 Canvas X 좌표
+     */
+    const drawLineX = (startX: number, startY: number, endX: number) => {
       const fgCanvas = fgCanvasRef.current;
 
       if (fgCanvas) {
         const fgCtx = fgCanvas.getContext("2d")!;
-        // 선 스타일 설정
-        fgCtx.strokeStyle = "yellow"; // 선 색상
-        fgCtx.lineWidth = 5; // 선 두께
-
-        const defaultStartY = 40; // 기본 사다리 시작 y 좌표
-
-        const startX = 25 + animalX * 50; // 시작 X 좌표
-        let startY = defaultStartY + 28 * animalY; // 시작 Y 좌표
-
-        // 시작점일 경우
-        if (animalY === 0) {
-          startY = startY + 10;
-        }
 
         let currentX = startX; // 현재 X 좌표 (애니메이션 진행 상태)
-        let currentY = startY; // 현재 Y 좌표 (애니메이션 진행 상태)
+        return new Promise((resolve) => {
+          const speed = 10; // 속도를 조정하려면 이 값을 변경
 
-        const endX = 25 + newAnimalX * 50; // 끝 X 좌표
-        const endY = defaultStartY + 28 * newAnimalY + 3; // 끝 Y 좌표
+          const animate = () => {
+            // 이미지 그리기
+            const imgWidth = 50; // 이미지 너비
+            const imgHeight = 50; // 이미지 높이
+            const imgX = currentX - imgWidth / 2; // 이미지의 중심이 선 끝에 오도록 조정
+            const imgY = startY - imgHeight / 2; // 이미지의 중심이 선 끝에 오도록 조정
 
-        const drawLineX = () => {
-          return new Promise((resolve) => {
-            const speed = 10; // 속도를 조정하려면 이 값을 변경
+            // fgCtx.drawImage(
+            //   image, // 이미지
+            //   initialAnimalX * 50, // 이미지 크롭 시작 x 좌표
+            //   50, // 이미지 크롭 시작 y 좌표
+            //   50, // 이미지 크롭 너비
+            //   50, // 이미지 크롭 높이
+            //   imgX, // 이미지를 그릴 canvas 의 x 좌표
+            //   imgY, // 이미지를 그릴 canvas 의 y 좌표
+            //   imgWidth, // 이미지 너비
+            //   imgHeight // 이미지 높이
+            // );
 
-            const animate = () => {
-              // 이미지 그리기
-              const imgWidth = 50; // 이미지 너비
-              const imgHeight = 50; // 이미지 높이
-              const imgX = currentX - imgWidth / 2; // 이미지의 중심이 선 끝에 오도록 조정
-              const imgY = startY - imgHeight / 2; // 이미지의 중심이 선 끝에 오도록 조정
+            fgCtx.beginPath(); // 경로 시작
+            fgCtx.moveTo(startX, startY); // 시작점 좌표 (x, y)
+            fgCtx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
+            fgCtx.stroke(); // 선 그리기
+            fgCtx.closePath(); // 경로 닫기
 
-              // fgCtx.drawImage(
-              //   image, // 이미지
-              //   initialAnimalX * 50, // 이미지 크롭 시작 x 좌표
-              //   50, // 이미지 크롭 시작 y 좌표
-              //   50, // 이미지 크롭 너비
-              //   50, // 이미지 크롭 높이
-              //   imgX, // 이미지를 그릴 canvas 의 x 좌표
-              //   imgY, // 이미지를 그릴 canvas 의 y 좌표
-              //   imgWidth, // 이미지 너비
-              //   imgHeight // 이미지 높이
-              // );
-
-              fgCtx.beginPath(); // 경로 시작
-              fgCtx.moveTo(startX, startY); // 시작점 좌표 (x, y)
-              fgCtx.lineTo(currentX, startY); // 끝점 좌표 (x, y) 횡이동
-              fgCtx.stroke(); // 선 그리기
-              fgCtx.closePath(); // 경로 닫기
-
-              if (currentX !== endX) {
-                if (currentX < endX) {
-                  currentX += Math.min(speed, endX - currentX); // 오른쪽으로 확장
-                } else {
-                  currentX -= Math.min(speed, currentX - endX); // 왼쪽으로 축소
-                }
-                requestAnimationFrame(animate); // 다음 프레임 요청
+            if (currentX !== endX) {
+              if (currentX < endX) {
+                currentX += Math.min(speed, endX - currentX); // 오른쪽으로 확장
               } else {
-                resolve(true); // 횡 이동 완료 시 Promise 해결
+                currentX -= Math.min(speed, currentX - endX); // 왼쪽으로 축소
               }
-            };
+              requestAnimationFrame(animate); // 다음 프레임 요청
+            } else {
+              resolve(true); // 횡 이동 완료 시 Promise 해결
+            }
+          };
 
-            const image = new Image();
-            image.src = "/images/sprite_junis_small_v4.png"; // 이미지 경로
-            image.onload = () => {
-              // 이미지가 로드된 후 애니메이션 시작
-              animate();
-            };
-          });
-        };
-
-        const drawLineY = () => {
-          return new Promise((resolve) => {
-            const speed = 5; // 속도를 조정하려면 이 값을 변경
-
-            const animate = () => {
-              fgCtx.beginPath(); // 경로 시작
-              fgCtx.moveTo(endX, startY - 3); // 시작점 좌표 (x, y)
-              fgCtx.lineTo(endX, currentY); // 끝점 좌표 (x, y) 종이동
-
-              fgCtx.stroke(); // 선 그리기
-              fgCtx.closePath(); // 경로 닫기
-
-              if (currentY !== endY) {
-                if (currentY < endY) {
-                  currentY += Math.min(speed, endY - currentY); // 아래로 확장
-                } else {
-                  currentY -= Math.min(speed, currentY - endY); // 위로 축소
-                }
-                requestAnimationFrame(animate); // 다음 프레임 요청
-              } else {
-                resolve(true); // 종 이동 완료 시 Promise 해결
-              }
-            };
-
+          const image = new Image();
+          image.src = "/images/sprite_junis_small_v4.png"; // 이미지 경로
+          image.onload = () => {
+            // 이미지가 로드된 후 애니메이션 시작
             animate();
-          });
-        };
-
-        await drawLineX();
-        await drawLineY();
+          };
+        });
       }
+    };
+
+    /**
+     * 수직이동
+     * @param startY - 동물이 움직이기 시작할 때의 Canvas Y 좌표
+     * @param startX - 동물이 움직이기 시작할 때의 Canvas X 좌표
+     * @param endY - 동물이 도착할 Canvas Y 좌표
+     */
+    const drawLineY = (startX: number, startY: number, endY: number) => {
+      const fgCanvas = fgCanvasRef.current;
+
+      if (fgCanvas) {
+        const fgCtx = fgCanvas.getContext("2d")!;
+
+        let currentY = startY; // 현재 Y 좌표 (애니메이션 진행 상태)
+        return new Promise((resolve) => {
+          const speed = 5; // 속도를 조정하려면 이 값을 변경
+
+          const animate = () => {
+            fgCtx.beginPath(); // 경로 시작
+            fgCtx.moveTo(startX, startY - 3); // 시작점 좌표 (x, y)
+            fgCtx.lineTo(startX, currentY); // 끝점 좌표 (x, y) 종이동
+
+            fgCtx.stroke(); // 선 그리기
+            fgCtx.closePath(); // 경로 닫기
+
+            if (currentY !== endY) {
+              if (currentY < endY) {
+                currentY += Math.min(speed, endY - currentY); // 아래로 확장
+              } else {
+                currentY -= Math.min(speed, currentY - endY); // 위로 축소
+              }
+              requestAnimationFrame(animate); // 다음 프레임 요청
+            } else {
+              resolve(true); // 종 이동 완료 시 Promise 해결
+            }
+          };
+
+          animate();
+        });
+      }
+    };
+
+    const fgCanvas = fgCanvasRef.current;
+
+    if (fgCanvas && isStart) {
+      const fgCtx = fgCanvas.getContext("2d")!;
+      fgCtx.strokeStyle = "yellow"; // 선 색상 설정
+      fgCtx.lineWidth = 5; // 선 두께 설정
+
+      const defaultStartY = 40; // 기본 사다리 시작 Canvas Y 좌표
+      const defaultStartX = 25; // 기본 사다리 시작 Canvas X 좌표
+
+      /*
+        동물이 움직이기 시작할 때의 Canvas Y 좌표
+        시작점일 경우, y 좌표 +10 보정
+      */
+      const startY =
+        movingStartY === 0
+          ? defaultStartY + 28 * movingStartY + 10
+          : defaultStartY + 28 * movingStartY;
+      const startX = defaultStartX + movingStartX * 50; // 동물이 움직이기 시작할 때의 Canvas X 좌표
+
+      const endY = defaultStartY + 28 * movingEndY + 3; //  동물이 도착할 Canvas Y 좌표
+      const endX = defaultStartX + movingEndX * 50; // 동물이 도착할 Canvas X 좌표
+
+      await drawLineX(startX, startY, endX); // 시작 X,Y 좌표에서 도착 Canvas X 좌표로 이동
+      await drawLineY(startX, startY, endY); // 시작 X,Y 좌표에서 도착 Canvas Y 좌표로 이동
     }
   };
 
